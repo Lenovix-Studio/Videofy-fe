@@ -116,57 +116,27 @@ export default function HistoryPage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      {/* Header Standard */}
-      <Header />
-
-      {/* Sidebar Standard */}
+      <Header
+        center={
+          <div className="flex max-w-2xl flex-1">
+            <div className="relative w-full">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari di riwayat tontonan..."
+                className="h-10 w-full rounded-full bg-muted/50 pl-10 pr-4 text-sm focus-visible:ring-1"
+              />
+            </div>
+          </div>
+        }
+      />
       <Sidebar />
 
       {/* Main Content Area */}
       <main className="lg:pl-52 pt-20 pb-12 px-4 lg:px-8">
         <div className="mx-auto max-w-[1600px] space-y-6">
-          {/* Page Header */}
-          <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-500/10 text-blue-500">
-                <History className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">
-                  Watch History
-                </h1>
-                <p className="text-xs text-muted-foreground">
-                  {totalVideos} video dalam riwayat tontonan kamu
-                </p>
-              </div>
-            </div>
-
-            {/* Clear History Button */}
-            {totalVideos > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearAllHistory}
-                className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
-              >
-                <Trash2 className="h-4 w-4" /> Hapus Semua Riwayat
-              </Button>
-            )}
-          </div>
-
-          {/* Search Filter Bar */}
-          {totalVideos > 0 && (
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Cari di riwayat tontonan..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-sm"
-              />
-            </div>
-          )}
-
           {/* History Lists grouped by date */}
           {totalVideos > 0 ? (
             <div className="space-y-8">
