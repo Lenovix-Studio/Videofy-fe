@@ -38,9 +38,17 @@ export function Header({ left, center, right, className = "" }: HeaderProps) {
   );
 
   const defaultRight = (
-    <Button variant="ghost" size="icon" className="rounded-full">
-      <Link href="/upload" title="Upload video">
-        <Upload className="h-5 w-5" />
+    <Button
+      variant="ghost"
+      className="rounded-full px-4 text-muted-foreground hover:text-foreground font-medium"
+    >
+      <Link
+        href="/upload"
+        title="Upload video"
+        className="flex items-center gap-2"
+      >
+        <Upload className="h-4 w-4" />
+        <span>Upload Video</span>
       </Link>
     </Button>
   );

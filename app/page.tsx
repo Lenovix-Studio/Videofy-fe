@@ -2,9 +2,6 @@
 
 import Link from "next/link";
 import {
-  Film,
-  Search,
-  Upload,
   Home,
   Heart,
   Tags,
@@ -13,9 +10,11 @@ import {
   Bookmark,
   Share2,
   Trash2,
+  Compass,
+  History,
+  Settings,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import {
@@ -26,6 +25,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Header } from "@/components/header";
+import { usePathname } from "next/navigation";
 
 interface Video {
   id: string;
@@ -35,6 +35,12 @@ interface Video {
   views: number;
   date: string;
   thumbnail: string;
+}
+
+interface SidebarItemProps {
+  icon: React.ReactNode;
+  label: string;
+  href: string;
 }
 
 const videos = [
@@ -109,27 +115,67 @@ export default function HomePage() {
       <div className="flex pt-16">
         {/* Sidebar */}
         <aside className="fixed bottom-0 left-0 top-16 hidden w-52 border-r bg-background lg:block">
-          <nav className="flex h-full flex-col p-3">
-            <div className="space-y-1">
-              <SidebarItem
-                icon={<Home className="h-4 w-4" />}
-                label="Home"
-                active
-              />
-              <SidebarItem
-                icon={<Heart className="h-4 w-4" />}
-                label="Favorites"
-              />
+          <nav className="flex h-full flex-col justify-between p-3 overflow-y-auto">
+            <div className="space-y-6">
+              {/* Main Section */}
+              <div className="space-y-1">
+                <SidebarItem
+                  href="/"
+                  icon={<Home className="h-4 w-4" />}
+                  label="Home"
+                />
+                <SidebarItem
+                  href="/explore"
+                  icon={<Compass className="h-4 w-4" />}
+                  label="Explore"
+                />
+              </div>
+
+              <Separator />
+
+              {/* Library / Personal Collection */}
+              <div>
+                <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Library
+                </div>
+                <div className="space-y-1">
+                  <SidebarItem
+                    href="/favorites"
+                    icon={<Heart className="h-4 w-4" />}
+                    label="Favorites"
+                  />
+                  <SidebarItem
+                    href="/history"
+                    icon={<History className="h-4 w-4" />}
+                    label="History"
+                  />
+                </div>
+              </div>
+
+              <Separator />
+
+              {/* Organize Section */}
+              <div>
+                <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                  Organize
+                </div>
+                <div className="space-y-1">
+                  <SidebarItem
+                    href="/tags"
+                    icon={<Tags className="h-4 w-4" />}
+                    label="Tags & Genres"
+                  />
+                </div>
+              </div>
             </div>
 
-            <Separator className="my-4" />
-
-            <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Library
-            </div>
-
-            <div className="space-y-1">
-              <SidebarItem icon={<Tags className="h-4 w-4" />} label="Tags" />
+            {/* Footer / Settings Section (Paling Bawah) */}
+            <div className="pt-4 border-t space-y-1">
+              <SidebarItem
+                href="/settings"
+                icon={<Settings className="h-4 w-4" />}
+                label="Settings"
+              />
             </div>
           </nav>
         </aside>
@@ -166,23 +212,22 @@ export default function HomePage() {
   );
 }
 
-function SidebarItem({
-  icon,
-  label,
-  active = false,
-}: {
-  icon: React.ReactNode;
-  label: string;
-  active?: boolean;
-}) {
+function SidebarItem({ icon, label, href }: SidebarItemProps) {
+  const pathname = usePathname();
+  const active = pathname === href;
+
   return (
-    <Button
-      variant={active ? "secondary" : "ghost"}
-      className="w-full justify-start gap-3 font-normal"
+    <Link
+      href={href}
+      className={`flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium transition-colors ${
+        active
+          ? "bg-secondary text-secondary-foreground font-semibold"
+          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+      }`}
     >
       {icon}
       <span>{label}</span>
-    </Button>
+    </Link>
   );
 }
 
