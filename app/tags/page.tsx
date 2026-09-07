@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import { Tags, Search, Play, Grid, Hash } from "lucide-react";
+import { Search, Play, Grid, Hash } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
@@ -192,10 +192,7 @@ export default function TagsPage() {
                           </h3>
                         </Link>
                         <p className="text-xs text-muted-foreground">
-                          {video.uploader}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {video.views.toLocaleString()} views • {video.date}
+                          {video.date}
                         </p>
                       </div>
                     </CardContent>

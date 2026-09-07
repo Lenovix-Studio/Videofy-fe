@@ -1,25 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import {
-  Home,
-  Heart,
-  Tags,
-  Play,
-  MoreVertical,
-  Bookmark,
-  Share2,
-  Trash2,
-} from "lucide-react";
+import { Home, Heart, Tags, Play } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuSeparator,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 
@@ -162,7 +146,7 @@ function MobileNavItem({
 
 function VideoCard({ video }: { video: Video }) {
   return (
-    <Card className="group overflow-hidden border-none bg-transparent shadow-none">
+    <Card className="group overflow-hidden border-none bg-transparent shadow-none pt-0">
       <Link href={`/watch/${video.id}`} className="block">
         <CardContent className="p-0">
           {/* Thumbnail Container */}
@@ -187,48 +171,14 @@ function VideoCard({ video }: { video: Video }) {
           </div>
 
           {/* Video Details */}
-          <div className="mt-3 flex gap-3 px-3 pb-2">
+          <div className="mt-3 flex gap-3 px-4">
             <div className="min-w-0 flex-1">
-              <h2 className="line-clamp-2 text-sm font-semibold leading-5 transition group-hover:text-primary">
+              <h2 className="line-clamp-1 text-sm font-semibold leading-5 transition group-hover:text-primary">
                 {video.title}
               </h2>
 
-              <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
-                {video.description}
-              </p>
-
-              <p className="mt-1 text-xs text-muted-foreground">
-                {video.views.toLocaleString()} views · {video.date}
-              </p>
+              <p className="mt-1 text-xs text-muted-foreground">{video.date}</p>
             </div>
-
-            {/* Context Menu Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger
-                render={
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-8 w-8 shrink-0 rounded-full"
-                  >
-                    <MoreVertical className="h-4 w-4" />
-                    <span className="sr-only">More options</span>
-                  </Button>
-                }
-              />
-              <DropdownMenuContent align="end" className="w-40">
-                <DropdownMenuItem className="gap-2">
-                  <Bookmark className="h-4 w-4" /> Favorite
-                </DropdownMenuItem>
-                <DropdownMenuItem className="gap-2">
-                  <Share2 className="h-4 w-4" /> Share
-                </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive">
-                  <Trash2 className="h-4 w-4" /> Delete
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </CardContent>
       </Link>

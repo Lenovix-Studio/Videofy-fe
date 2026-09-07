@@ -10,21 +10,12 @@ import {
   Code,
   Film,
   Play,
-  MoreVertical,
-  Bookmark,
-  Share2,
 } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 // Category Filter List
 const categories = [
@@ -118,25 +109,23 @@ export default function ExplorePage() {
 
   return (
     <div className="min-h-screen bg-background text-foreground">
-      <Header />
-      <Sidebar />
-
-      {/* Main Content Area */}
-      <main className="lg:pl-52 pt-20 pb-12 px-4 lg:px-8">
-        <div className="mx-auto max-w-[1600px] space-y-6">
-          {/* Page Title Header */}
-          <div className="flex items-center gap-3 border-b pb-4">
+      <Header
+        center={
+          <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary/10 text-primary">
               <Compass className="h-6 w-6" />
             </div>
             <div>
               <h1 className="text-2xl font-bold tracking-tight">Explore</h1>
-              <p className="text-xs text-muted-foreground">
-                Temukan video trending, kategori favorit, dan konten terbaru
-              </p>
             </div>
           </div>
+        }
+      />
+      <Sidebar />
 
+      {/* Main Content Area */}
+      <main className="lg:pl-52 pt-20 pb-12 px-4 lg:px-8">
+        <div className="mx-auto max-w-[1600px] space-y-6">
           {/* Category Filter Pills */}
           <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
             {categories.map((cat) => {
@@ -162,7 +151,7 @@ export default function ExplorePage() {
             {filteredVideos.map((video) => (
               <Card
                 key={video.id}
-                className="group overflow-hidden border-none bg-transparent shadow-none"
+                className="group overflow-hidden border-none bg-transparent shadow-none pt-0"
               >
                 <CardContent className="p-0 space-y-3">
                   {/* Thumbnail */}
@@ -171,7 +160,7 @@ export default function ExplorePage() {
                       <img
                         src={video.thumbnail}
                         alt={video.title}
-                        className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                        className="h-full w-full object-cover"
                       />
 
                       {/* Play Hover Overlay */}
@@ -196,44 +185,17 @@ export default function ExplorePage() {
                   </Link>
 
                   {/* Meta Info */}
-                  <div className="flex items-start justify-between gap-2">
+                  <div className="flex items-start justify-between gap-2 px-4">
                     <div className="min-w-0 flex-1 space-y-1">
                       <Link href={`/watch/${video.id}`}>
-                        <h3 className="line-clamp-2 text-sm font-semibold leading-snug transition group-hover:text-primary">
+                        <h3 className="line-clamp-1 text-sm font-semibold leading-snug transition group-hover:text-primary">
                           {video.title}
                         </h3>
                       </Link>
                       <p className="text-xs text-muted-foreground">
-                        {video.uploader}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {video.views.toLocaleString()} views • {video.date}
+                        {video.date}
                       </p>
                     </div>
-
-                    {/* Options Menu */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger
-                        render={
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-8 w-8 shrink-0 rounded-full"
-                          >
-                            <MoreVertical className="h-4 w-4" />
-                            <span className="sr-only">Options</span>
-                          </Button>
-                        }
-                      />
-                      <DropdownMenuContent align="end" className="w-40">
-                        <DropdownMenuItem className="gap-2">
-                          <Bookmark className="h-4 w-4" /> Save
-                        </DropdownMenuItem>
-                        <DropdownMenuItem className="gap-2">
-                          <Share2 className="h-4 w-4" /> Share
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
                   </div>
                 </CardContent>
               </Card>

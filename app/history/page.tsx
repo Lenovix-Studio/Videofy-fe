@@ -2,27 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  History,
-  Play,
-  Trash2,
-  Search,
-  MoreVertical,
-  Clock,
-  Share2,
-} from "lucide-react";
+import { History, Play, Trash2, Search, Clock } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 // Data Dummy Riwayat Tontonan (Dikelompokkan Berdasarkan Waktu Waktu Tonton)
 const initialHistoryGroups = [
@@ -99,15 +85,6 @@ export default function HistoryPage() {
     });
   };
 
-  // Handler Hapus Semua Riwayat
-  const handleClearAllHistory = () => {
-    if (
-      confirm("Apakah kamu yakin ingin menghapus seluruh riwayat tontonan?")
-    ) {
-      setHistoryGroups([]);
-    }
-  };
-
   // Hitung Total Video Riwayat
   const totalVideos = historyGroups.reduce(
     (acc, group) => acc + group.videos.length,
@@ -179,6 +156,17 @@ export default function HistoryPage() {
                                   </div>
                                 </div>
 
+                                <button
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    handleRemoveHistory(groupIdx, video.id);
+                                  }}
+                                  title="Hapus dari Riwayat"
+                                  className="absolute top-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100"
+                                >
+                                  <Trash2 className="h-4 w-4" />
+                                </button>
+
                                 {/* Duration Badge */}
                                 <span className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium text-white">
                                   {video.duration}
@@ -194,47 +182,11 @@ export default function HistoryPage() {
                                     {video.title}
                                   </h3>
                                 </Link>
-                                <p className="text-xs text-muted-foreground">
-                                  {video.uploader}
-                                </p>
                                 <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                   <Clock className="h-3 w-3" />
                                   <span>Ditonton: {video.watchedAt}</span>
                                 </div>
                               </div>
-
-                              {/* Options Menu */}
-                              <DropdownMenu>
-                                <DropdownMenuTrigger
-                                  render={
-                                    <Button
-                                      variant="ghost"
-                                      size="icon"
-                                      className="h-8 w-8 shrink-0 rounded-full"
-                                    >
-                                      <MoreVertical className="h-4 w-4" />
-                                      <span className="sr-only">Options</span>
-                                    </Button>
-                                  }
-                                />
-                                <DropdownMenuContent
-                                  align="end"
-                                  className="w-48"
-                                >
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleRemoveHistory(groupIdx, video.id)
-                                    }
-                                    className="gap-2 text-destructive focus:text-destructive"
-                                  >
-                                    <Trash2 className="h-4 w-4" /> Hapus dari
-                                    Riwayat
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem className="gap-2">
-                                    <Share2 className="h-4 w-4" /> Share
-                                  </DropdownMenuItem>
-                                </DropdownMenuContent>
-                              </DropdownMenu>
                             </div>
                           </CardContent>
                         </Card>

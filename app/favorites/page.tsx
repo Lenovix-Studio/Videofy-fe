@@ -2,26 +2,13 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import {
-  Heart,
-  Play,
-  Trash2,
-  Search,
-  MoreVertical,
-  Share2,
-} from "lucide-react";
+import { Heart, Play, Trash2, Search } from "lucide-react";
 
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 
 // Data Dummy Video Favorit
 const initialFavoriteVideos = [
@@ -61,15 +48,6 @@ export default function FavoritesPage() {
   // Handler Hapus Satu Video
   const handleRemoveFavorite = (id: string) => {
     setFavoriteVideos((prev) => prev.filter((video) => video.id !== id));
-  };
-
-  // Handler Hapus Semua Video
-  const handleClearAll = () => {
-    if (
-      confirm("Apakah kamu yakin ingin menghapus semua video dari favorit?")
-    ) {
-      setFavoriteVideos([]);
-    }
   };
 
   // Filter Berdasarkan Pencarian
@@ -117,7 +95,7 @@ export default function FavoritesPage() {
                       href={`/watch/${video.id}`}
                       className="block relative"
                     >
-                      <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
+                      <div className="relative aspect-video overflow-hidden rounded-xl bg-muted group">
                         <img
                           src={video.thumbnail}
                           alt={video.title}
@@ -130,6 +108,17 @@ export default function FavoritesPage() {
                             <Play className="ml-0.5 h-5 w-5 fill-current" />
                           </div>
                         </div>
+
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRemoveFavorite(video.id);
+                          }}
+                          title="Hapus dari Favorit"
+                          className="absolute top-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </button>
 
                         {/* Duration Badge */}
                         <span className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium text-white">
@@ -147,39 +136,9 @@ export default function FavoritesPage() {
                           </h3>
                         </Link>
                         <p className="text-xs text-muted-foreground">
-                          {video.uploader}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {video.views.toLocaleString()} views • {video.date}
+                          {video.date}
                         </p>
                       </div>
-
-                      {/* Options Menu */}
-                      <DropdownMenu>
-                        <DropdownMenuTrigger
-                          render={
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="h-8 w-8 shrink-0 rounded-full"
-                            >
-                              <MoreVertical className="h-4 w-4" />
-                              <span className="sr-only">Options</span>
-                            </Button>
-                          }
-                        />
-                        <DropdownMenuContent align="end" className="w-48">
-                          <DropdownMenuItem
-                            onClick={() => handleRemoveFavorite(video.id)}
-                            className="gap-2 text-destructive focus:text-destructive"
-                          >
-                            <Trash2 className="h-4 w-4" /> Hapus dari Favorit
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="gap-2">
-                            <Share2 className="h-4 w-4" /> Share
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
                     </div>
                   </CardContent>
                 </Card>
