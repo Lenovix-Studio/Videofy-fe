@@ -13,7 +13,7 @@ import { Badge } from "@/components/ui/badge";
 
 // Data Dummy Tags & Genres
 const initialTags = [
-  { id: "all", name: "Semua Tag", count: 42 },
+  { id: "all", name: "All", count: 42 },
   { id: "nextjs", name: "Next.js", count: 12 },
   { id: "react", name: "React Native", count: 8 },
   { id: "gaming", name: "Gaming & Strategy", count: 15 },
@@ -84,7 +84,22 @@ export default function TagsPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header Standard */}
-      <Header />
+      <Header
+        center={
+          <div className="flex max-w-2xl flex-1">
+            <div className="relative w-full">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchTagQuery}
+                onChange={(e) => setSearchTagQuery(e.target.value)}
+                type="text"
+                placeholder="Cari tag atau genre..."
+                className="h-10 w-full rounded-full bg-muted/50 pl-10 pr-4 text-sm focus-visible:ring-1"
+              />
+            </div>
+          </div>
+        }
+      />
 
       {/* Sidebar Standard */}
       <Sidebar />
@@ -92,34 +107,6 @@ export default function TagsPage() {
       {/* Main Content Area */}
       <main className="lg:pl-52 pt-20 pb-12 px-4 lg:px-8">
         <div className="mx-auto max-w-[1600px] space-y-8">
-          {/* Page Header */}
-          <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-purple-500/10 text-purple-500">
-                <Tags className="h-6 w-6" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">
-                  Tags & Genres
-                </h1>
-                <p className="text-xs text-muted-foreground">
-                  Jelajahi konten berdasarkan topik dan genre yang kamu minati
-                </p>
-              </div>
-            </div>
-
-            {/* Search Tag Filter */}
-            <div className="relative w-full sm:w-64">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Cari tag atau genre..."
-                value={searchTagQuery}
-                onChange={(e) => setSearchTagQuery(e.target.value)}
-                className="pl-9 h-9 text-sm"
-              />
-            </div>
-          </div>
-
           {/* Tags Chips Bar */}
           <div className="space-y-3">
             <div className="flex items-center gap-2 text-sm font-semibold text-muted-foreground">
@@ -168,7 +155,7 @@ export default function TagsPage() {
                 {filteredVideos.map((video) => (
                   <Card
                     key={video.id}
-                    className="group overflow-hidden border-none bg-transparent shadow-none"
+                    className="group overflow-hidden border-none bg-transparent shadow-none pt-0"
                   >
                     <CardContent className="p-0 space-y-3">
                       {/* Thumbnail */}
@@ -180,7 +167,7 @@ export default function TagsPage() {
                           <img
                             src={video.thumbnail}
                             alt={video.title}
-                            className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                            className="h-full w-full object-cover transition"
                           />
 
                           {/* Play Hover Overlay */}
@@ -198,9 +185,9 @@ export default function TagsPage() {
                       </Link>
 
                       {/* Meta Info */}
-                      <div className="space-y-1">
+                      <div className="space-y-1 px-4">
                         <Link href={`/watch/${video.id}`}>
-                          <h3 className="line-clamp-2 text-sm font-semibold leading-snug transition group-hover:text-primary">
+                          <h3 className="line-clamp-1 text-sm font-semibold leading-snug transition group-hover:text-primary">
                             {video.title}
                           </h3>
                         </Link>
