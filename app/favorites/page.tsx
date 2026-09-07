@@ -80,7 +80,22 @@ export default function FavoritesPage() {
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header Standard */}
-      <Header />
+      <Header
+        center={
+          <div className="flex max-w-2xl flex-1">
+            <div className="relative w-full">
+              <Search className="absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+              <Input
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                type="text"
+                placeholder="Cari di daftar favorit..."
+                className="h-10 w-full rounded-full bg-muted/50 pl-10 pr-4 text-sm focus-visible:ring-1"
+              />
+            </div>
+          </div>
+        }
+      />
 
       {/* Sidebar Standard */}
       <Sidebar />
@@ -88,53 +103,13 @@ export default function FavoritesPage() {
       {/* Main Content Area */}
       <main className="lg:pl-52 pt-20 pb-12 px-4 lg:px-8">
         <div className="mx-auto max-w-[1600px] space-y-6">
-          {/* Page Header */}
-          <div className="flex flex-col gap-4 border-b pb-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="flex items-center gap-3">
-              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10 text-rose-500">
-                <Heart className="h-6 w-6 fill-current" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold tracking-tight">Favorites</h1>
-                <p className="text-xs text-muted-foreground">
-                  {favoriteVideos.length} video tersimpan di favorit kamu
-                </p>
-              </div>
-            </div>
-
-            {/* Clear All Button */}
-            {favoriteVideos.length > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleClearAll}
-                className="gap-2 text-destructive hover:bg-destructive/10 hover:text-destructive shrink-0"
-              >
-                <Trash2 className="h-4 w-4" /> Hapus Semua
-              </Button>
-            )}
-          </div>
-
-          {/* Search Filter Bar */}
-          {favoriteVideos.length > 0 && (
-            <div className="relative max-w-md">
-              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-              <Input
-                placeholder="Cari di daftar favorit..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-9 h-9 text-sm"
-              />
-            </div>
-          )}
-
           {/* Video Grid */}
           {filteredVideos.length > 0 ? (
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {filteredVideos.map((video) => (
                 <Card
                   key={video.id}
-                  className="group overflow-hidden border-none bg-transparent shadow-none"
+                  className="group overflow-hidden border-none bg-transparent shadow-none pt-0"
                 >
                   <CardContent className="p-0 space-y-3">
                     {/* Thumbnail */}
@@ -146,7 +121,7 @@ export default function FavoritesPage() {
                         <img
                           src={video.thumbnail}
                           alt={video.title}
-                          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                          className="h-full w-full object-cover"
                         />
 
                         {/* Play Hover Overlay */}
@@ -164,10 +139,10 @@ export default function FavoritesPage() {
                     </Link>
 
                     {/* Meta Info */}
-                    <div className="flex items-start justify-between gap-2">
+                    <div className="flex items-start justify-between gap-2 px-4">
                       <div className="min-w-0 flex-1 space-y-1">
                         <Link href={`/watch/${video.id}`}>
-                          <h3 className="line-clamp-2 text-sm font-semibold leading-snug transition group-hover:text-primary">
+                          <h3 className="line-clamp-1 text-sm font-semibold leading-snug transition group-hover:text-primary">
                             {video.title}
                           </h3>
                         </Link>

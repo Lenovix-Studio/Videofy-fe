@@ -157,7 +157,7 @@ export default function HistoryPage() {
                       {filteredVideos.map((video) => (
                         <Card
                           key={video.id}
-                          className="group overflow-hidden border-none bg-transparent shadow-none"
+                          className="group overflow-hidden border-none bg-transparent shadow-none pt-0"
                         >
                           <CardContent className="p-0 space-y-3">
                             {/* Thumbnail */}
@@ -169,7 +169,7 @@ export default function HistoryPage() {
                                 <img
                                   src={video.thumbnail}
                                   alt={video.title}
-                                  className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
+                                  className="h-full w-full object-cover"
                                 />
 
                                 {/* Play Hover Overlay */}
@@ -187,10 +187,10 @@ export default function HistoryPage() {
                             </Link>
 
                             {/* Meta Info */}
-                            <div className="flex items-start justify-between gap-2">
+                            <div className="flex items-start justify-between gap-2 px-4">
                               <div className="min-w-0 flex-1 space-y-1">
                                 <Link href={`/watch/${video.id}`}>
-                                  <h3 className="line-clamp-2 text-sm font-semibold leading-snug transition group-hover:text-primary">
+                                  <h3 className="line-clamp-1 text-sm font-semibold leading-snug transition group-hover:text-primary">
                                     {video.title}
                                   </h3>
                                 </Link>
