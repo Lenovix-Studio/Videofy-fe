@@ -3,14 +3,39 @@
 import Link from "next/link";
 import {
   Film,
+  Search,
+  Upload,
   Home,
   Heart,
   Tags,
-  Search,
   Play,
   MoreVertical,
-  Upload,
+  Bookmark,
+  Share2,
+  Trash2,
 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Header } from "@/components/header";
+
+interface Video {
+  id: string;
+  title: string;
+  description: string;
+  duration: string;
+  views: number;
+  date: string;
+  thumbnail: string;
+}
 
 const videos = [
   {
@@ -77,97 +102,41 @@ const videos = [
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-zinc-950 text-zinc-100">
-      {/* Header */}
-      <header className="fixed inset-x-0 top-0 z-50 h-16 border-b border-zinc-800 bg-zinc-950/95 backdrop-blur">
-        <div className="flex h-full items-center gap-6 px-4 lg:px-6">
-          {/* Logo */}
-          <div className="flex w-52 shrink-0 items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-white text-zinc-950">
-              <Film size={20} strokeWidth={2.5} />
-            </div>
+    <div className="min-h-screen bg-background text-foreground">
+      <Header />
 
-            <span className="text-xl font-bold tracking-tight">Videofy</span>
-          </div>
-
-          {/* Search */}
-          <div className="flex max-w-2xl flex-1">
-            <div className="relative w-full">
-              <Search
-                size={18}
-                className="absolute left-4 top-1/2 -translate-y-1/2 text-zinc-500"
-              />
-
-              <input
-                type="text"
-                placeholder="Search videos..."
-                className="h-10 w-full rounded-full border border-zinc-700 bg-zinc-900 pl-11 pr-4 text-sm text-zinc-100 outline-none transition placeholder:text-zinc-500 focus:border-zinc-500"
-              />
-            </div>
-          </div>
-
-          {/* Upload */}
-          <Link
-            href="/upload"
-            className="flex h-9 w-9 items-center justify-center rounded-full text-zinc-400 transition hover:bg-zinc-800 hover:text-white"
-            title="Upload video"
-          >
-            <Upload size={21} />
-          </Link>
-        </div>
-      </header>
-
-      {/* Main */}
+      {/* Main Container */}
       <div className="flex pt-16">
         {/* Sidebar */}
-        <aside className="fixed bottom-0 left-0 top-16 hidden w-52 border-r border-zinc-800 bg-zinc-950 lg:block">
-          <nav className="flex h-full flex-col px-3 py-5">
+        <aside className="fixed bottom-0 left-0 top-16 hidden w-52 border-r bg-background lg:block">
+          <nav className="flex h-full flex-col p-3">
             <div className="space-y-1">
-              <SidebarItem icon={<Home size={19} />} label="Home" active />
-
-              <SidebarItem icon={<Heart size={19} />} label="Favorites" />
+              <SidebarItem
+                icon={<Home className="h-4 w-4" />}
+                label="Home"
+                active
+              />
+              <SidebarItem
+                icon={<Heart className="h-4 w-4" />}
+                label="Favorites"
+              />
             </div>
 
-            <div className="my-5 border-t border-zinc-800" />
+            <Separator className="my-4" />
 
-            <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-zinc-500">
+            <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
               Library
             </div>
 
             <div className="space-y-1">
-              <SidebarItem icon={<Tags size={19} />} label="Tags" />
-            </div>
-
-            <div className="mt-auto border-t border-zinc-800 pt-4">
-              <p className="px-3 text-xs leading-5 text-zinc-600">
-                Videofy
-                <br />
-                Personal video library
-              </p>
+              <SidebarItem icon={<Tags className="h-4 w-4" />} label="Tags" />
             </div>
           </nav>
         </aside>
 
-        {/* Content */}
+        {/* Main Content */}
         <main className="w-full lg:ml-52">
           <div className="mx-auto max-w-[1600px] px-5 py-8 lg:px-8">
-            {/* Page heading */}
-            <div className="mb-7 flex items-center justify-between">
-              <div>
-                <h1 className="text-2xl font-semibold tracking-tight">
-                  My Videos
-                </h1>
-
-                <p className="mt-1 text-sm text-zinc-500">
-                  Your personal video collection
-                </p>
-              </div>
-
-              <div className="text-sm text-zinc-500">
-                {videos.length} videos
-              </div>
-            </div>
-
             {/* Video Grid */}
             <div className="grid grid-cols-1 gap-x-5 gap-y-8 sm:grid-cols-2 xl:grid-cols-3">
               {videos.map((video) => (
@@ -178,14 +147,19 @@ export default function HomePage() {
         </main>
       </div>
 
-      {/* Mobile bottom navigation */}
-      <div className="fixed inset-x-0 bottom-0 z-50 border-t border-zinc-800 bg-zinc-950/95 backdrop-blur lg:hidden">
+      {/* Mobile Bottom Navigation */}
+      <div className="fixed inset-x-0 bottom-0 z-50 border-t bg-background/95 backdrop-blur lg:hidden">
         <nav className="flex h-16 items-center justify-around">
-          <MobileNavItem icon={<Home size={20} />} label="Home" active />
-
-          <MobileNavItem icon={<Heart size={20} />} label="Favorites" />
-
-          <MobileNavItem icon={<Tags size={20} />} label="Tags" />
+          <MobileNavItem
+            icon={<Home className="h-5 w-5" />}
+            label="Home"
+            active
+          />
+          <MobileNavItem
+            icon={<Heart className="h-5 w-5" />}
+            label="Favorites"
+          />
+          <MobileNavItem icon={<Tags className="h-5 w-5" />} label="Tags" />
         </nav>
       </div>
     </div>
@@ -202,17 +176,13 @@ function SidebarItem({
   active?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm transition ${
-        active
-          ? "bg-zinc-800 text-white"
-          : "text-zinc-400 hover:bg-zinc-900 hover:text-zinc-100"
-      }`}
+    <Button
+      variant={active ? "secondary" : "ghost"}
+      className="w-full justify-start gap-3 font-normal"
     >
       {icon}
       <span>{label}</span>
-    </button>
+    </Button>
   );
 }
 
@@ -226,77 +196,91 @@ function MobileNavItem({
   active?: boolean;
 }) {
   return (
-    <button
-      type="button"
-      className={`flex flex-col items-center gap-1 text-xs ${
-        active ? "text-white" : "text-zinc-500"
+    <Button
+      variant="ghost"
+      size="sm"
+      className={`flex h-auto flex-col items-center gap-1 p-2 ${
+        active ? "text-primary" : "text-muted-foreground"
       }`}
     >
       {icon}
-      <span>{label}</span>
-    </button>
+      <span className="text-[10px] font-medium">{label}</span>
+    </Button>
   );
 }
 
-function VideoCard({
-  video,
-}: {
-  video: {
-    id: string;
-    title: string;
-    description: string;
-    duration: string;
-    views: number;
-    date: string;
-    thumbnail: string;
-  };
-}) {
+function VideoCard({ video }: { video: Video }) {
   return (
-    <article className="group min-w-0">
-      {/* Thumbnail */}
-      <div className="relative aspect-video overflow-hidden rounded-xl bg-zinc-900">
-        <img
-          src={video.thumbnail}
-          alt={video.title}
-          className="h-full w-full object-cover transition duration-300 group-hover:scale-[1.03]"
-        />
+    <Card className="group overflow-hidden border-none bg-transparent shadow-none">
+      <Link href={`/watch/${video.id}`} className="block">
+        <CardContent className="p-0">
+          {/* Thumbnail Container */}
+          <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
+            <img
+              src={video.thumbnail}
+              alt={video.title}
+              className="h-full w-full object-cover"
+            />
 
-        {/* Overlay */}
-        <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/30">
-          <div className="flex h-12 w-12 scale-90 items-center justify-center rounded-full bg-white text-zinc-950 opacity-0 shadow-lg transition group-hover:scale-100 group-hover:opacity-100">
-            <Play size={20} fill="currentColor" className="ml-0.5" />
+            {/* Hover Overlay */}
+            <div className="absolute inset-0 flex items-center justify-center bg-black/0 transition group-hover:bg-black/40">
+              <div className="flex h-12 w-12 scale-90 items-center justify-center rounded-full bg-primary text-primary-foreground opacity-0 shadow-lg transition group-hover:scale-100 group-hover:opacity-100">
+                <Play className="ml-0.5 h-5 w-5 fill-current" />
+              </div>
+            </div>
+
+            {/* Duration Badge */}
+            <span className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium text-white">
+              {video.duration}
+            </span>
           </div>
-        </div>
 
-        {/* Duration */}
-        <span className="absolute bottom-2 right-2 rounded bg-black/80 px-1.5 py-0.5 text-xs font-medium text-white">
-          {video.duration}
-        </span>
-      </div>
+          {/* Video Details */}
+          <div className="mt-3 flex gap-3 px-3 pb-2">
+            <div className="min-w-0 flex-1">
+              <h2 className="line-clamp-2 text-sm font-semibold leading-5 transition group-hover:text-primary">
+                {video.title}
+              </h2>
 
-      {/* Information */}
-      <div className="mt-3 flex gap-3">
-        <div className="min-w-0 flex-1">
-          <h2 className="line-clamp-2 text-sm font-semibold leading-5 text-zinc-100 transition group-hover:text-white">
-            {video.title}
-          </h2>
+              <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">
+                {video.description}
+              </p>
 
-          <p className="mt-1 line-clamp-1 text-xs text-zinc-500">
-            {video.description}
-          </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {video.views.toLocaleString()} views · {video.date}
+              </p>
+            </div>
 
-          <p className="mt-1 text-xs text-zinc-500">
-            {video.views.toLocaleString()} views · {video.date}
-          </p>
-        </div>
-
-        <button
-          type="button"
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-zinc-500 transition hover:bg-zinc-800 hover:text-white"
-        >
-          <MoreVertical size={18} />
-        </button>
-      </div>
-    </article>
+            {/* Context Menu Dropdown */}
+            <DropdownMenu>
+              <DropdownMenuTrigger
+                render={
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-8 w-8 shrink-0 rounded-full"
+                  >
+                    <MoreVertical className="h-4 w-4" />
+                    <span className="sr-only">More options</span>
+                  </Button>
+                }
+              />
+              <DropdownMenuContent align="end" className="w-40">
+                <DropdownMenuItem className="gap-2">
+                  <Bookmark className="h-4 w-4" /> Favorite
+                </DropdownMenuItem>
+                <DropdownMenuItem className="gap-2">
+                  <Share2 className="h-4 w-4" /> Share
+                </DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem className="gap-2 text-destructive focus:text-destructive">
+                  <Trash2 className="h-4 w-4" /> Delete
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </CardContent>
+      </Link>
+    </Card>
   );
 }
