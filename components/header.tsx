@@ -1,9 +1,8 @@
 import { ReactNode } from "react";
 import Link from "next/link";
-import { Film, Search, Upload } from "lucide-react";
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { Film, Search, Upload } from "lucide-react";
 
 interface HeaderProps {
   left?: ReactNode;
@@ -13,6 +12,7 @@ interface HeaderProps {
 }
 
 export function Header({ left, center, right, className = "" }: HeaderProps) {
+  // Left
   const defaultLeft = (
     <div className="flex w-52 shrink-0 items-center gap-2">
       <Link href="/" className="flex items-center gap-2">
@@ -24,6 +24,7 @@ export function Header({ left, center, right, className = "" }: HeaderProps) {
     </div>
   );
 
+  // Center
   const defaultCenter = (
     <div className="flex max-w-2xl flex-1">
       <div className="relative w-full">
@@ -37,6 +38,7 @@ export function Header({ left, center, right, className = "" }: HeaderProps) {
     </div>
   );
 
+  // Right
   const defaultRight = (
     <Button
       variant="ghost"
@@ -57,12 +59,14 @@ export function Header({ left, center, right, className = "" }: HeaderProps) {
     <header
       className={`fixed inset-x-0 top-0 z-50 h-16 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60 ${className}`}
     >
-      <div className="flex h-full items-center justify-between gap-6 px-4 lg:px-6">
+      <div className="grid h-full grid-cols-3 items-center gap-6 px-4 lg:px-6">
         {/* Left */}
-        <div className="flex items-center gap-3">{left ?? defaultLeft}</div>
+        <div className="flex items-center gap-3 justify-start">
+          {left ?? defaultLeft}
+        </div>
 
         {/* Center */}
-        <div className="flex flex-1 items-center justify-center">
+        <div className="flex items-center justify-center">
           {center ?? defaultCenter}
         </div>
 

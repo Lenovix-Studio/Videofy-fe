@@ -4,37 +4,50 @@ import { useState, useRef } from "react";
 import Link from "next/link";
 import {
   Upload,
-  X,
   FileVideo,
+  X,
   CheckCircle2,
   Tag,
   Link as LinkIcon,
+  ImageIcon,
 } from "lucide-react";
-import { Header } from "@/components/header";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
 import { Progress } from "@/components/ui/progress";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Header } from "@/components/header";
 
 export default function UploadPage() {
-  const [selectedFile, setSelectedFile] = useState<File | null>(null);
-  const [videoPreview, setVideoPreview] = useState<string | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [isSuccess, setIsSuccess] = useState(false);
-
-  // Form states
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [source, setSource] = useState("");
   const [tags, setTags] = useState("");
+  const [selectedFile, setSelectedFile] = useState<File | null>(null);
+  const [videoPreview, setVideoPreview] = useState<string | null>(null);
+  const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
+  const [thumbPreview, setThumbPreview] = useState<string | null>(null);
+  const [isDragging, setIsDragging] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
+  const [isSuccess, setIsSuccess] = useState(false);
+  const [showConfirmDialog, setShowConfirmDialog] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const thumbInputRef = useRef<HTMLInputElement>(null);
 
-  // Handle Drag & Drop
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(true);
@@ -47,60 +60,127 @@ export default function UploadPage() {
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragging(false);
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-      handleFileChange(e.dataTransfer.files[0]);
+    const file = e.dataTransfer.files?.[0];
+    if (file && file.type.startsWith("video/")) {
+      handleSetVideoFile(file);
+    } else {
+      toast.error("File harus berupa video!");
     }
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      handleFileChange(e.target.files[0]);
-    }
+    const file = e.target.files?.[0];
+    if (file) handleSetVideoFile(file);
   };
 
-  const handleFileChange = (file: File) => {
-    if (!file.type.startsWith("video/")) {
-      alert("Harap unggah file berformat video (MP4, WebM, dll).");
-      return;
-    }
+  const handleSetVideoFile = (file: File) => {
     setSelectedFile(file);
-    setTitle(file.name.replace(/\.[^/.]+$/, "")); // Auto fill title dari nama file
     setVideoPreview(URL.createObjectURL(file));
+    if (!title) {
+      const fileNameWithoutExt = file.name.replace(/\.[^/.]+$/, "");
+      setTitle(fileNameWithoutExt);
+    }
   };
 
   const handleRemoveFile = () => {
     setSelectedFile(null);
+    if (videoPreview) URL.revokeObjectURL(videoPreview);
     setVideoPreview(null);
-    setTitle("");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleThumbSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file && file.type.startsWith("image/")) {
+      setThumbnailFile(file);
+      setThumbPreview(URL.createObjectURL(file));
+    } else {
+      toast.error("File thumbnail harus berupa gambar!");
     }
   };
 
-  // Simulasi Submit / Upload
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!selectedFile) return;
+  const handleRemoveThumb = () => {
+    setThumbnailFile(null);
+    if (thumbPreview) URL.revokeObjectURL(thumbPreview);
+    setThumbPreview(null);
+    if (thumbInputRef.current) thumbInputRef.current.value = "";
+  };
 
+  const handlePreSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!selectedFile) {
+      toast.error("Silakan pilih file video terlebih dahulu.");
+      return;
+    }
+    setShowConfirmDialog(true);
+  };
+
+  // Eksekusi API Upload
+  const executeUpload = async () => {
+    setShowConfirmDialog(false);
     setIsUploading(true);
     setUploadProgress(0);
 
-    // Simulation progress bar
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          setIsSuccess(true);
-          return 100;
+    const formData = new FormData();
+    formData.append("title", title);
+    if (description) formData.append("description", description);
+    if (source) formData.append("source", source);
+    if (tags) formData.append("tagIds", tags);
+    formData.append("video", selectedFile as Blob);
+    if (thumbnailFile) {
+      formData.append("thumbnail", thumbnailFile as Blob);
+    }
+
+    try {
+      const xhr = new XMLHttpRequest();
+      const API_URL = process.env.NEXT_PUBLIC_API_URL;
+
+      xhr.upload.addEventListener("progress", (event) => {
+        if (event.lengthComputable) {
+          const percent = Math.round((event.loaded / event.total) * 100);
+          setUploadProgress(percent);
         }
-        return prev + 10;
       });
-    }, 200);
+
+      xhr.onreadystatechange = () => {
+        if (xhr.readyState === XMLHttpRequest.DONE) {
+          setIsUploading(false);
+
+          if (xhr.status >= 200 && xhr.status < 300) {
+            setIsSuccess(true);
+            toast.success("Video berhasil diunggah!");
+          } else {
+            let errorMsg = "Gagal mengunggah video.";
+            try {
+              const res = JSON.parse(xhr.responseText);
+              errorMsg = res.message || errorMsg;
+            } catch {}
+            toast.error(errorMsg);
+          }
+        }
+      };
+
+      xhr.open("POST", `${API_URL}/videos/upload`);
+      xhr.send(formData);
+    } catch (error: any) {
+      setIsUploading(false);
+      toast.error("Terjadi kesalahan jaringan atau server.");
+    }
+  };
+
+  const resetForm = () => {
+    setTitle("");
+    setDescription("");
+    setSource("");
+    setTags("");
+    handleRemoveFile();
+    handleRemoveThumb();
+    setIsSuccess(false);
   };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
+      {/* Header */}
       <Header
         center={
           <h1 className="text-base font-semibold tracking-tight">
@@ -108,26 +188,34 @@ export default function UploadPage() {
           </h1>
         }
         right={
-          <Button type="submit" disabled={!selectedFile || isUploading}>
-            {isUploading ? "Mengunggah..." : "Publish"}
-          </Button>
+          <>
+            {!isSuccess && (
+              <Button
+                type="button"
+                onClick={handlePreSubmit}
+                disabled={!selectedFile || !title.trim() || isUploading}
+              >
+                {isUploading ? "Mengunggah..." : "Publish"}
+              </Button>
+            )}
+          </>
         }
       />
 
       <main className="mx-auto max-w-4xl px-4 pt-24 pb-16">
         {isSuccess ? (
           /* State saat Sukses */
-          <Card className="p-8 text-center">
+          <Card className="p-8 text-center border-dashed">
             <CardContent className="flex flex-col items-center gap-4 pt-6">
               <div className="flex h-16 w-16 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
                 <CheckCircle2 className="h-10 w-10" />
               </div>
               <h2 className="text-2xl font-bold">Video Berhasil Diunggah!</h2>
               <p className="max-w-md text-sm text-muted-foreground">
-                Video kamu sedang diproses dan akan segera tersedia di platform.
+                Video kamu telah diproses dan berhasil tersimpan di server.
               </p>
               <div className="mt-4 flex gap-3">
-                <Button variant="outline" onClick={() => setIsSuccess(false)}>
+                <Button variant="outline" onClick={resetForm}>
                   Upload Video Lain
                 </Button>
                 <Button>
@@ -138,13 +226,9 @@ export default function UploadPage() {
           </Card>
         ) : (
           /* Form Upload */
-          <form onSubmit={handleSubmit} className="space-y-8">
+          <form onSubmit={handlePreSubmit} className="space-y-8">
             {/* Metadata Section */}
             <div className="space-y-6">
-              <h2 className="text-lg font-semibold tracking-tight border-b pb-2">
-                Informasi Detail
-              </h2>
-
               {/* Title */}
               <div className="space-y-2">
                 <Label htmlFor="title" className="text-sm font-medium">
@@ -155,6 +239,7 @@ export default function UploadPage() {
                   placeholder="Tambahkan judul yang menarik..."
                   value={title}
                   onChange={(e) => setTitle(e.target.value)}
+                  disabled={isUploading}
                   required
                 />
               </div>
@@ -169,11 +254,12 @@ export default function UploadPage() {
                   placeholder="Ceritakan singkat tentang video kamu..."
                   rows={4}
                   value={description}
-                  onChange={(e: any) => setDescription(e.target.value)}
+                  onChange={(e) => setDescription(e.target.value)}
+                  disabled={isUploading}
                 />
               </div>
 
-              {/* Tags & Visibility Grid */}
+              {/* Tags & Source Grid */}
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 {/* Source */}
                 <div className="space-y-2">
@@ -190,6 +276,7 @@ export default function UploadPage() {
                     placeholder="https://example.com/video-source"
                     value={source}
                     onChange={(e) => setSource(e.target.value)}
+                    disabled={isUploading}
                   />
                 </div>
 
@@ -207,14 +294,78 @@ export default function UploadPage() {
                     placeholder="react, nextjs, tutorial"
                     value={tags}
                     onChange={(e) => setTags(e.target.value)}
+                    disabled={isUploading}
                   />
                 </div>
               </div>
+
+              {/* Custom Thumbnail (Opsional) */}
+              <div className="space-y-2 pt-2">
+                <Label className="text-sm font-medium flex items-center gap-1.5">
+                  <ImageIcon className="h-4 w-4 text-muted-foreground" />{" "}
+                  Thumbnail Custom (Opsional)
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Jika dikosongkan, thumbnail akan di-generate otomatis dari
+                  frame video.
+                </p>
+
+                <input
+                  ref={thumbInputRef}
+                  type="file"
+                  accept="image/*"
+                  onChange={handleThumbSelect}
+                  className="hidden"
+                  disabled={isUploading}
+                />
+
+                {!thumbnailFile ? (
+                  <Button
+                    type="button"
+                    variant="outline"
+                    size="sm"
+                    onClick={() => thumbInputRef.current?.click()}
+                    disabled={isUploading}
+                  >
+                    Pilih Gambar Thumbnail
+                  </Button>
+                ) : (
+                  <div className="flex items-center gap-3 pt-1">
+                    <div className="relative aspect-video h-16 rounded-md overflow-hidden bg-muted border">
+                      {thumbPreview && (
+                        <img
+                          src={thumbPreview}
+                          alt="Thumbnail Preview"
+                          className="h-full w-full object-cover"
+                        />
+                      )}
+                    </div>
+                    <div className="flex flex-col gap-1">
+                      <span className="text-xs font-medium truncate max-w-50">
+                        {thumbnailFile.name}
+                      </span>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRemoveThumb}
+                        className="h-6 px-2 text-xs text-destructive hover:bg-destructive/10"
+                        disabled={isUploading}
+                      >
+                        Hapus Thumbnail
+                      </Button>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
 
-            {/* File Upload / Drag Zone */}
+            {/* File Video Upload / Drag Zone */}
             <div className="space-y-2">
-              <Label className="text-base font-semibold">File Video</Label>
+              <Label className="text-base font-semibold">
+                File Video <span className="text-destructive">*</span>
+              </Label>
+
               {!selectedFile ? (
                 <div
                   onDragOver={handleDragOver}
@@ -267,7 +418,7 @@ export default function UploadPage() {
                       )}
                     </div>
 
-                    {/* File Info */}
+                    {/* File Info & Upload Progress */}
                     <div className="flex-1 space-y-2 w-full min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex items-center gap-2 truncate">
@@ -281,6 +432,7 @@ export default function UploadPage() {
                           variant="ghost"
                           size="icon"
                           onClick={handleRemoveFile}
+                          disabled={isUploading}
                           className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
                         >
                           <X className="h-4 w-4" />
@@ -310,6 +462,30 @@ export default function UploadPage() {
           </form>
         )}
       </main>
+
+      {/* AlertDialog Konfirmasi Publish */}
+      <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Konfirmasi Unggah Video</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin mempublikasikan video{" "}
+              <strong className="text-foreground">{title}</strong>?
+              {!thumbnailFile && (
+                <span className="block mt-2 text-xs text-amber-600 dark:text-amber-400">
+                  * Thumbnail akan dibuat otomatis dari frame detik ke-1 video.
+                </span>
+              )}
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction onClick={executeUpload}>
+              Ya, Publikasikan
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
