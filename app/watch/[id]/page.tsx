@@ -1,9 +1,8 @@
 "use client";
 
 import Link from "next/link";
-import { use } from "react"; // 1. Import hook 'use' dari React
+import { useEffect, useState, use } from "react";
 import {
-  Upload,
   Pencil,
   Trash2,
   Heart,
@@ -12,13 +11,17 @@ import {
   Clock,
   HardDrive,
   Globe,
+  Eye,
 } from "lucide-react";
+import { formatFileSize, formatDuration, formatDate } from "@/lib/helper";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Header } from "@/components/header";
 import { Badge } from "@/components/ui/badge";
+import notFound from "@/app/not-found";
+import WatchLoading from "@/app/loading";
 
 interface PageProps {
   params: Promise<{
@@ -26,31 +29,71 @@ interface PageProps {
   }>;
 }
 
-// 2. Hapus kata kunci 'async' di sini
-export default function WatchPage({ params }: PageProps) {
-  // 3. Gunakan 'use(params)' untuk mengambil id secara sinkron di Client Component
-  const { id } = use(params);
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
 
-  // Data dummy video yang sedang ditonton
-  const currentVideo = {
-    id,
-    title: "Building Videofy - Next.js & Tailwind CSS Full Tutorial",
-    description:
-      "In this video, we'll walk through building Videofy, a full-featured personal video management platform using Next.js App Router, TailwindIn this video, we'll walk through building Videofy, a full-featured personal video management platform using Next.js App Router, TailwindIn this video, we'll walk through building Videofy, a full-featured personal video management platform using Next.js App Router, Tailwind CSS v4, and Base UI / Shadcn components.",
-    views: 12400,
-    date: "2 days ago",
-    videoUrl:
-      "https://commondatastorage.googleapis.com/gtv-videos-bucket/sample/BigBuckBunny.mp4",
-    likes: 1250,
-    uploader: {
-      name: "Kamil Sudarmi",
-      avatar: "",
-      subscribers: "12.5k",
-    },
-    fileSize: "15.4 MB",
-    source: "Local Storage",
-    tags: ["Next.js", "Tailwind CSS", "React", "Web Dev", "Shadcn UI"], // 2. Menambahkan array tags di sini
-  };
+interface Tag {
+  id: string;
+  name: string;
+  slug: string;
+}
+
+interface VideoDetail {
+  id: string;
+  title: string;
+  description: string | null;
+  videoUrl: string;
+  thumbnailUrl: string;
+  filePath: string;
+  thumbnailPath: string;
+  fileName: string;
+  duration: number;
+  size: number;
+  mimeType: string;
+  uploader: string;
+  views: number;
+  source: string | null;
+  createdAt: string;
+  updatedAt: string;
+  isFavorite: boolean;
+  tags: Tag[];
+}
+
+const getMediaUrl = (path: string): string => {
+  if (!path) return "";
+  return path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
+};
+
+export default function WatchPage({ params }: PageProps) {
+  const resolvedParams = use(params);
+  const videoId = resolvedParams.id;
+  const [currentVideo, setCurrentVideo] = useState<VideoDetail | null>(null);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
+
+  // Fetch detail video
+  useEffect(() => {
+    const fetchVideoDetail = async () => {
+      try {
+        setLoading(true);
+        const res = await fetch(`${API_BASE_URL}/videos/${videoId}`);
+        if (!res.ok) {
+          throw new Error("Gagal mengambil data video");
+        }
+        const data: VideoDetail = await res.json();
+        setCurrentVideo(data);
+        setIsFavorite(data.isFavorite);
+      } catch (err: any) {
+        setError(err.message || "Terjadi kesalahan");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    if (videoId) {
+      fetchVideoDetail();
+    }
+  }, [videoId]);
 
   // Data dummy video terkait (Related Videos)
   const relatedVideos = [
@@ -80,26 +123,46 @@ export default function WatchPage({ params }: PageProps) {
     },
   ];
 
-  const formatDuration = (durationStr: string | number) => {
-    const totalSeconds = Number(durationStr) || 0;
-    const minutes = Math.floor(totalSeconds / 60);
-    const seconds = totalSeconds % 60;
-    return `${minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
+  // Handler Download Video
+  const handleDownload = () => {
+    if (!currentVideo) return;
+    const fullVideoUrl = getMediaUrl(currentVideo.videoUrl);
+    const a = document.createElement("a");
+    a.href = fullVideoUrl;
+    a.download = currentVideo.fileName || `${currentVideo.title}.mp4`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
   };
+
+  // Handler Favorite Toggle (UI state)
+  const handleToggleFavorite = () => {
+    setIsFavorite((prev) => !prev);
+    // TODO: Tambahkan panggillan API POST/DELETE untuk favorite jika backend sudah siap
+  };
+
+  if (loading) {
+    return WatchLoading();
+  }
+
+  if (error || (!currentVideo && currentVideo == null)) {
+    return notFound();
+  }
 
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
 
       {/* Main Content Layout */}
-      <main className="mx-auto max-w-[1700px] px-4 pt-20 pb-12 lg:px-8">
+      <main className="mx-auto px-4 pt-20 pb-12 lg:px-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 xl:grid-cols-4">
           {/* Main Video Section (Left Column) */}
           <div className="lg:col-span-2 xl:col-span-3">
             {/* HTML5 Video Player */}
             <div className="relative aspect-video overflow-hidden rounded-2xl bg-black shadow-lg">
               <video
-                src={currentVideo.videoUrl}
+                src={getMediaUrl(currentVideo.videoUrl)}
+                poster={getMediaUrl(currentVideo.thumbnailUrl)}
                 controls
                 autoPlay
                 className="h-full w-full object-contain"
@@ -111,11 +174,16 @@ export default function WatchPage({ params }: PageProps) {
               {currentVideo.title}
             </h1>
 
-            {/* Technical Metadata Row (Date, Duration, Size, Source) */}
+            {/* Technical Metadata Row */}
             <div className="mt-2 flex flex-wrap items-center gap-y-2 gap-x-4 text-xs font-medium text-muted-foreground">
               <div className="flex items-center gap-1">
+                <Eye className="h-3.5 w-3.5" />
+                <span>{currentVideo.views} views</span>
+              </div>
+              <Separator orientation="vertical" className="h-3" />
+              <div className="flex items-center gap-1">
                 <Calendar className="h-3.5 w-3.5" />
-                <span>{currentVideo.date}</span>
+                <span>{formatDate(currentVideo.createdAt)}</span>
               </div>
               <Separator
                 orientation="vertical"
@@ -123,12 +191,12 @@ export default function WatchPage({ params }: PageProps) {
               />
               <div className="flex items-center gap-1">
                 <Clock className="h-3.5 w-3.5" />
-                <span>{formatDuration(7)}</span>
+                <span>{formatDuration(currentVideo.duration)}</span>
               </div>
               <Separator orientation="vertical" className="h-3" />
               <div className="flex items-center gap-1">
                 <HardDrive className="h-3.5 w-3.5" />
-                <span>{currentVideo.fileSize || "15.4 MB"}</span>{" "}
+                <span>{formatFileSize(currentVideo.size)}</span>
               </div>
               <Separator orientation="vertical" className="h-3" />
               <div className="flex items-center gap-1">
@@ -142,57 +210,54 @@ export default function WatchPage({ params }: PageProps) {
               {/* Uploader Profile */}
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
-                  <AvatarImage src={currentVideo.uploader.avatar} />
+                  <AvatarImage src="" />
                   <AvatarFallback className="bg-primary/20 font-semibold text-primary">
-                    {currentVideo.uploader.name
-                      ?.substring(0, 2)
-                      .toUpperCase() || "KS"}
+                    {currentVideo.uploader?.substring(0, 2).toUpperCase() ||
+                      "AD"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="text-sm font-semibold leading-none">
-                    {currentVideo.uploader.name}
+                    {currentVideo.uploader}
                   </h3>
                 </div>
               </div>
 
-              {/* Requested Action Buttons */}
+              {/* Action Buttons */}
               <div className="flex flex-wrap items-center gap-2">
                 {/* Favorite Video Button */}
                 <Button
-                  variant="secondary"
+                  variant={isFavorite ? "default" : "outline"}
                   size="sm"
                   className="rounded-full gap-2"
-                  onClick={() => {
-                    /* add favorite logic */
-                  }}
+                  onClick={handleToggleFavorite}
                 >
-                  <Heart className="h-4 w-4 text-red-500 fill-none" />
-                  <span>Favorite</span>
+                  <Heart
+                    className={`h-4 w-4 ${
+                      isFavorite
+                        ? "text-red-500 fill-red-500"
+                        : "text-red-500 fill-none"
+                    }`}
+                  />
+                  <span>{isFavorite ? "Favorited" : "Favorite"}</span>
                 </Button>
 
                 {/* Download Video Button */}
                 <Button
-                  variant="secondary"
+                  variant="outline"
                   size="sm"
                   className="rounded-full gap-2"
-                  onClick={() => {
-                    /* add download handler */
-                  }}
+                  onClick={handleDownload}
                 >
                   <Download className="h-4 w-4" />
                   <span>Download</span>
                 </Button>
 
                 {/* Edit Video Button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full gap-2"
-                >
+                <Button variant="outline" size="sm" className="rounded-full">
                   <Link
                     href={`/edit/${currentVideo.id}`}
-                    className="flex flex-wrap items-center gap-2"
+                    className="flex items-center gap-2"
                   >
                     <Pencil className="h-4 w-4" />
                     <span>Edit</span>
@@ -205,7 +270,7 @@ export default function WatchPage({ params }: PageProps) {
                   size="sm"
                   className="rounded-full gap-2"
                   onClick={() => {
-                    /* add delete modal/handler */
+                    /* Handler Hapus Video */
                   }}
                 >
                   <Trash2 className="h-4 w-4" />
@@ -219,21 +284,27 @@ export default function WatchPage({ params }: PageProps) {
               <CardContent className="p-4 space-y-3.5">
                 {/* Tags Row */}
                 <div className="flex flex-wrap gap-2">
-                  {currentVideo.tags.map((tag) => (
-                    <Badge
-                      key={tag}
-                      variant="secondary"
-                      className="bg-background/60 hover:bg-background dark:bg-background/30 dark:hover:bg-background/50 border border-border/40 text-primary font-medium tracking-wide text-[11px] px-2.5 py-0.5 rounded-md transition-colors cursor-pointer shadow-sm"
-                    >
-                      #{tag}
-                    </Badge>
-                  ))}
+                  {currentVideo.tags && currentVideo.tags.length > 0 ? (
+                    currentVideo.tags.map((tag) => (
+                      <Badge
+                        key={tag.id}
+                        variant="secondary"
+                        className="bg-background/60 hover:bg-background dark:bg-background/30 dark:hover:bg-background/50 border border-border/40 text-primary font-medium tracking-wide text-[11px] px-2.5 py-0.5 rounded-md transition-colors cursor-pointer shadow-sm"
+                      >
+                        #{tag.name}
+                      </Badge>
+                    ))
+                  ) : (
+                    <span className="text-xs text-muted-foreground italic">
+                      Tidak ada tag
+                    </span>
+                  )}
                 </div>
 
                 {/* Description Paragraph */}
                 <div className="pt-0.5">
                   <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-muted-foreground dark:text-foreground/80 font-normal tracking-wide">
-                    {currentVideo.description}
+                    {currentVideo.description || "Tidak ada deskripsi video."}
                   </p>
                 </div>
               </CardContent>
@@ -242,7 +313,9 @@ export default function WatchPage({ params }: PageProps) {
 
           {/* Related Videos Sidebar (Right Column) */}
           <div className="space-y-4">
-            <h2 className="text-lg font-semibold tracking-tight">Up Next</h2>
+            <h2 className="text-lg font-semibold tracking-tight">
+              Related Videos
+            </h2>
             <Separator className="my-2" />
 
             <div className="flex flex-col gap-4">
