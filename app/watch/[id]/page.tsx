@@ -18,6 +18,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Header } from "@/components/header";
+import { Badge } from "@/components/ui/badge";
 
 interface PageProps {
   params: Promise<{
@@ -48,6 +49,7 @@ export default function WatchPage({ params }: PageProps) {
     },
     fileSize: "15.4 MB",
     source: "Local Storage",
+    tags: ["Next.js", "Tailwind CSS", "React", "Web Dev", "Shadcn UI"], // 2. Menambahkan array tags di sini
   };
 
   // Data dummy video terkait (Related Videos)
@@ -213,11 +215,27 @@ export default function WatchPage({ params }: PageProps) {
             </div>
 
             {/* Video Description Box */}
-            <Card className="mt-4 rounded-xl bg-muted/30 border-none shadow-none">
-              <CardContent className="p-4 text-sm space-y-2">
-                <p className="whitespace-pre-line leading-relaxed text-foreground/90">
-                  {currentVideo.description}
-                </p>
+            <Card className="mt-4 rounded-xl bg-muted/40 hover:bg-muted/50 dark:bg-muted/20 dark:hover:bg-muted/30 transition-all duration-200 border-none shadow-none overflow-hidden">
+              <CardContent className="p-4 space-y-3.5">
+                {/* Tags Row */}
+                <div className="flex flex-wrap gap-2">
+                  {currentVideo.tags.map((tag) => (
+                    <Badge
+                      key={tag}
+                      variant="secondary"
+                      className="bg-background/60 hover:bg-background dark:bg-background/30 dark:hover:bg-background/50 border border-border/40 text-primary font-medium tracking-wide text-[11px] px-2.5 py-0.5 rounded-md transition-colors cursor-pointer shadow-sm"
+                    >
+                      #{tag}
+                    </Badge>
+                  ))}
+                </div>
+
+                {/* Description Paragraph */}
+                <div className="pt-0.5">
+                  <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-muted-foreground dark:text-foreground/80 font-normal tracking-wide">
+                    {currentVideo.description}
+                  </p>
+                </div>
               </CardContent>
             </Card>
           </div>
