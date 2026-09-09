@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useEffect, useState, use } from "react";
 import {
   Pencil,
@@ -12,6 +13,7 @@ import {
   HardDrive,
   Globe,
   Eye,
+  Loader2,
 } from "lucide-react";
 import { formatFileSize, formatDuration, formatDate } from "@/lib/helper";
 import { Button } from "@/components/ui/button";
@@ -20,6 +22,17 @@ import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Header } from "@/components/header";
 import { Badge } from "@/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import notFound from "@/app/not-found";
 import WatchLoading from "@/app/loading";
 
@@ -66,10 +79,13 @@ const getMediaUrl = (path: string): string => {
 export default function WatchPage({ params }: PageProps) {
   const resolvedParams = use(params);
   const videoId = resolvedParams.id;
+  const router = useRouter();
+
   const [currentVideo, setCurrentVideo] = useState<VideoDetail | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [isDeleting, setIsDeleting] = useState<boolean>(false);
 
   // Fetch detail video
   useEffect(() => {
@@ -94,6 +110,27 @@ export default function WatchPage({ params }: PageProps) {
       fetchVideoDetail();
     }
   }, [videoId]);
+
+  // Handler Hapus Video
+  const handleDeleteVideo = async () => {
+    try {
+      setIsDeleting(true);
+      const res = await fetch(`${API_BASE_URL}/videos/${videoId}`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) {
+        throw new Error("Gagal menghapus video");
+      }
+
+      router.push("/");
+      router.refresh();
+    } catch (err: any) {
+      alert(err.message || "Terjadi kesalahan saat menghapus video");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
 
   // Data dummy video terkait (Related Videos)
   const relatedVideos = [
@@ -265,17 +302,45 @@ export default function WatchPage({ params }: PageProps) {
                 </Button>
 
                 {/* Delete Video Button */}
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  className="rounded-full gap-2"
-                  onClick={() => {
-                    /* Handler Hapus Video */
-                  }}
-                >
-                  <Trash2 className="h-4 w-4" />
-                  <span>Delete</span>
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger
+                    render={
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        className="rounded-full gap-2"
+                        disabled={isDeleting}
+                      >
+                        {isDeleting ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                        <span>{isDeleting ? "Deleting..." : "Delete"}</span>
+                      </Button>
+                    }
+                  />
+
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Hapus Video Ini?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        Tindakan ini tidak dapat dibatalkan. Video{" "}
+                        <strong>"{currentVideo.title}"</strong> dan semua file
+                        terkait akan dihapus secara permanen dari server.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Batal</AlertDialogCancel>
+                      <AlertDialogAction
+                        onClick={handleDeleteVideo}
+                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
+                      >
+                        Hapus
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
 
