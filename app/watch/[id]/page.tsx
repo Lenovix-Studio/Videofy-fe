@@ -1,27 +1,22 @@
-import Link from "next/link";
-import {
-  Film,
-  Search,
-  Upload,
-  ThumbsUp,
-  Share2,
-  Bookmark,
-  MoreHorizontal,
-  Play,
-  ArrowLeft,
-} from "lucide-react";
+"use client";
 
+import Link from "next/link";
+import { use } from "react"; // 1. Import hook 'use' dari React
+import {
+  Upload,
+  Pencil,
+  Trash2,
+  Heart,
+  Download,
+  Calendar,
+  Clock,
+  HardDrive,
+  Globe,
+} from "lucide-react";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
 import { Header } from "@/components/header";
 
 interface PageProps {
@@ -30,15 +25,17 @@ interface PageProps {
   }>;
 }
 
-export default async function WatchPage({ params }: PageProps) {
-  const { id } = await params;
+// 2. Hapus kata kunci 'async' di sini
+export default function WatchPage({ params }: PageProps) {
+  // 3. Gunakan 'use(params)' untuk mengambil id secara sinkron di Client Component
+  const { id } = use(params);
 
   // Data dummy video yang sedang ditonton
   const currentVideo = {
     id,
     title: "Building Videofy - Next.js & Tailwind CSS Full Tutorial",
     description:
-      "In this video, we'll walk through building Videofy, a full-featured personal video management platform using Next.js App Router, Tailwind CSS v4, and Base UI / Shadcn components.",
+      "In this video, we'll walk through building Videofy, a full-featured personal video management platform using Next.js App Router, TailwindIn this video, we'll walk through building Videofy, a full-featured personal video management platform using Next.js App Router, TailwindIn this video, we'll walk through building Videofy, a full-featured personal video management platform using Next.js App Router, Tailwind CSS v4, and Base UI / Shadcn components.",
     views: 12400,
     date: "2 days ago",
     videoUrl:
@@ -49,6 +46,8 @@ export default async function WatchPage({ params }: PageProps) {
       avatar: "",
       subscribers: "12.5k",
     },
+    fileSize: "15.4 MB",
+    source: "Local Storage",
   };
 
   // Data dummy video terkait (Related Videos)
@@ -79,6 +78,13 @@ export default async function WatchPage({ params }: PageProps) {
     },
   ];
 
+  const formatDuration = (durationStr: string | number) => {
+    const totalSeconds = Number(durationStr) || 0;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    return `${minutes}:${seconds < 10 ? `0${seconds}` : seconds}`;
+  };
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <Header />
@@ -103,83 +109,112 @@ export default async function WatchPage({ params }: PageProps) {
               {currentVideo.title}
             </h1>
 
+            {/* Technical Metadata Row (Date, Duration, Size, Source) */}
+            <div className="mt-2 flex flex-wrap items-center gap-y-2 gap-x-4 text-xs font-medium text-muted-foreground">
+              <div className="flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" />
+                <span>{currentVideo.date}</span>
+              </div>
+              <Separator
+                orientation="vertical"
+                className="h-3 hidden sm:block"
+              />
+              <div className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                <span>{formatDuration(7)}</span>
+              </div>
+              <Separator orientation="vertical" className="h-3" />
+              <div className="flex items-center gap-1">
+                <HardDrive className="h-3.5 w-3.5" />
+                <span>{currentVideo.fileSize || "15.4 MB"}</span>{" "}
+              </div>
+              <Separator orientation="vertical" className="h-3" />
+              <div className="flex items-center gap-1">
+                <Globe className="h-3.5 w-3.5" />
+                <span>{currentVideo.source || "Local Storage"}</span>
+              </div>
+            </div>
+
             {/* Channel Info & Actions Bar */}
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-4">
-              {/* Channel Profile */}
+            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-b py-4 dark:border-muted/40">
+              {/* Uploader Profile */}
               <div className="flex items-center gap-3">
                 <Avatar className="h-10 w-10">
                   <AvatarImage src={currentVideo.uploader.avatar} />
                   <AvatarFallback className="bg-primary/20 font-semibold text-primary">
-                    KS
+                    {currentVideo.uploader.name
+                      ?.substring(0, 2)
+                      .toUpperCase() || "KS"}
                   </AvatarFallback>
                 </Avatar>
                 <div>
                   <h3 className="text-sm font-semibold leading-none">
                     {currentVideo.uploader.name}
                   </h3>
-                  <p className="mt-1 text-xs text-muted-foreground">
-                    {currentVideo.uploader.subscribers} subscribers
-                  </p>
                 </div>
               </div>
 
-              {/* Action Buttons */}
-              <div className="flex items-center gap-2">
+              {/* Requested Action Buttons */}
+              <div className="flex flex-wrap items-center gap-2">
+                {/* Favorite Video Button */}
                 <Button
                   variant="secondary"
                   size="sm"
                   className="rounded-full gap-2"
+                  onClick={() => {
+                    /* add favorite logic */
+                  }}
                 >
-                  <ThumbsUp className="h-4 w-4" />
-                  <span>{currentVideo.likes.toLocaleString()}</span>
+                  <Heart className="h-4 w-4 text-red-500 fill-none" />
+                  <span>Favorite</span>
                 </Button>
 
+                {/* Download Video Button */}
                 <Button
                   variant="secondary"
                   size="sm"
                   className="rounded-full gap-2"
+                  onClick={() => {
+                    /* add download handler */
+                  }}
                 >
-                  <Share2 className="h-4 w-4" />
-                  <span className="hidden sm:inline">Share</span>
+                  <Download className="h-4 w-4" />
+                  <span>Download</span>
                 </Button>
 
+                {/* Edit Video Button */}
                 <Button
-                  variant="secondary"
+                  variant="outline"
                   size="sm"
                   className="rounded-full gap-2"
                 >
-                  <Bookmark className="h-4 w-4" />
-                  <span className="hidden sm:inline">Save</span>
+                  <Link
+                    href={`/edit/${currentVideo.id}`}
+                    className="flex flex-wrap items-center gap-2"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    <span>Edit</span>
+                  </Link>
                 </Button>
 
-                <DropdownMenu>
-                  <DropdownMenuTrigger
-                    render={
-                      <Button
-                        variant="secondary"
-                        size="icon"
-                        className="h-8 w-8 rounded-full"
-                      >
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    }
-                  />
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuItem>Report Video</DropdownMenuItem>
-                    <DropdownMenuItem>Download</DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+                {/* Delete Video Button */}
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  className="rounded-full gap-2"
+                  onClick={() => {
+                    /* add delete modal/handler */
+                  }}
+                >
+                  <Trash2 className="h-4 w-4" />
+                  <span>Delete</span>
+                </Button>
               </div>
             </div>
 
             {/* Video Description Box */}
-            <Card className="mt-4 rounded-xl bg-muted/40 border-none">
+            <Card className="mt-4 rounded-xl bg-muted/30 border-none shadow-none">
               <CardContent className="p-4 text-sm space-y-2">
-                <div className="flex gap-2 font-semibold text-xs text-muted-foreground">
-                  <span>{currentVideo.views.toLocaleString()} views</span>
-                  <span>•</span>
-                  <span>{currentVideo.date}</span>
-                </div>
                 <p className="whitespace-pre-line leading-relaxed text-foreground/90">
                   {currentVideo.description}
                 </p>
