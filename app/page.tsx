@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
+import { toast } from "sonner";
 
 interface Video {
   id: string;
@@ -52,8 +53,8 @@ export default function HomePage() {
         pageNum === 1 ? newVideos : [...prev, ...newVideos],
       );
       setHasNextPage(meta.hasNextPage);
-    } catch (error) {
-      console.error("Fetch Error:", error);
+    } catch (error: any) {
+      toast.error("Fetch Error:", error);
     } finally {
       setIsLoading(false);
       setIsInitialLoading(false);
