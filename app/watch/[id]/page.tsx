@@ -217,7 +217,7 @@ export default async function WatchPage({ params }: PageProps) {
                       {video.title}
                     </h3>
                     <p className="mt-1 text-[11px] text-muted-foreground">
-                      {video.views} • {video.date}
+                      {video.date}
                     </p>
                   </div>
                 </Link>

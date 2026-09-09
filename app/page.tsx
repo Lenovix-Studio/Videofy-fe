@@ -14,6 +14,7 @@ interface Video {
   title: string;
   thumbnailUrl: string;
   videoUrl: string;
+  duration: string;
   createdAt: string;
 }
 
@@ -245,6 +246,14 @@ function VideoCard({ video }: { video: Video }) {
     }
   };
 
+  const formatDurationFromSeconds = (totalSecondsStr: string | number) => {
+    const totalSeconds = Number(totalSecondsStr) || 0;
+    const minutes = Math.floor(totalSeconds / 60);
+    const seconds = totalSeconds % 60;
+    const paddedSeconds = seconds < 10 ? `0${seconds}` : seconds;
+    return `${minutes}:${paddedSeconds}`;
+  };
+
   return (
     <Card className="group overflow-hidden border-none bg-transparent shadow-none pt-0">
       <Link href={`/watch/${video.id}`} className="block">
@@ -262,6 +271,10 @@ function VideoCard({ video }: { video: Video }) {
                 isHovered ? "opacity-0" : "opacity-100"
               }`}
             />
+
+            <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.5 text-[10px] font-medium text-white m-1">
+              {formatDurationFromSeconds(video.duration)}
+            </span>
 
             {/* Video Preview */}
             {videoSrc && (
