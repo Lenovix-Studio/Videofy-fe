@@ -163,13 +163,11 @@ export default function WatchPage({ params }: PageProps) {
   // Handler Download Video
   const handleDownload = () => {
     if (!currentVideo) return;
-    const fullVideoUrl = getMediaUrl(currentVideo.videoUrl);
-    const a = document.createElement("a");
-    a.href = fullVideoUrl;
-    a.download = currentVideo.fileName || `${currentVideo.title}.mp4`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
+
+    const BACKEND_URL =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+    window.location.href = `${BACKEND_URL}/videos/${currentVideo.id}/download`;
   };
 
   // Handler Favorite Toggle (UI state)
