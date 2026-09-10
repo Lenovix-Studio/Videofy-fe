@@ -71,6 +71,14 @@ interface VideoDetail {
   tags: Tag[];
 }
 
+interface RelatedVideo {
+  id: string;
+  title: string;
+  thumbnail: string;
+  duration: string;
+  date: string;
+}
+
 const getMediaUrl = (path: string): string => {
   if (!path) return "";
   return path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
@@ -82,6 +90,7 @@ export default function WatchPage({ params }: PageProps) {
   const router = useRouter();
 
   const [currentVideo, setCurrentVideo] = useState<VideoDetail | null>(null);
+  const [relatedVideos, setRelatedVideos] = useState<RelatedVideo[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<string | null>(null);
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
@@ -89,16 +98,31 @@ export default function WatchPage({ params }: PageProps) {
 
   // Fetch detail video
   useEffect(() => {
-    const fetchVideoDetail = async () => {
+    const fetchAllVideoData = async () => {
       try {
         setLoading(true);
-        const res = await fetch(`${API_BASE_URL}/videos/${videoId}`);
-        if (!res.ok) {
+
+        const [detailRes, relatedRes] = await Promise.all([
+          fetch(`${API_BASE_URL}/videos/${videoId}`),
+          fetch(`${API_BASE_URL}/videos/${videoId}/related`, {
+            cache: "no-store",
+          }),
+        ]);
+
+        if (!detailRes.ok) {
           throw new Error("Gagal mengambil data video");
         }
-        const data: VideoDetail = await res.json();
-        setCurrentVideo(data);
-        setIsFavorite(data.isFavorite);
+
+        const detailData: VideoDetail = await detailRes.json();
+        setCurrentVideo(detailData);
+        setIsFavorite(detailData.isFavorite);
+
+        if (relatedRes.ok) {
+          const relatedData: RelatedVideo[] = await relatedRes.json();
+          setRelatedVideos(relatedData);
+        } else {
+          console.error("Gagal mengambil data video terkait");
+        }
       } catch (err: any) {
         setError(err.message || "Terjadi kesalahan");
       } finally {
@@ -107,7 +131,7 @@ export default function WatchPage({ params }: PageProps) {
     };
 
     if (videoId) {
-      fetchVideoDetail();
+      fetchAllVideoData();
     }
   }, [videoId]);
 
@@ -131,34 +155,6 @@ export default function WatchPage({ params }: PageProps) {
       setIsDeleting(false);
     }
   };
-
-  // Data dummy video terkait (Related Videos)
-  const relatedVideos = [
-    {
-      id: "2",
-      title: "Advanced Web Scraping with Python & Selenium",
-      views: "8.2K views",
-      date: "1 week ago",
-      duration: "14:20",
-      thumbnail: "https://picsum.photos/seed/scrape/400/225",
-    },
-    {
-      id: "3",
-      title: "React Native & Expo Setup Guide 2026",
-      views: "15.4K views",
-      date: "2 weeks ago",
-      duration: "22:05",
-      thumbnail: "https://picsum.photos/seed/expo/400/225",
-    },
-    {
-      id: "4",
-      title: "Building Mobile Apps with Kotlin & Jetpack Compose",
-      views: "5.1K views",
-      date: "1 month ago",
-      duration: "45:10",
-      thumbnail: "https://picsum.photos/seed/kotlin/400/225",
-    },
-  ];
 
   // Handler Download Video
   const handleDownload = () => {
@@ -411,35 +407,41 @@ export default function WatchPage({ params }: PageProps) {
             <Separator className="my-2" />
 
             <div className="flex flex-col gap-4">
-              {relatedVideos.map((video) => (
-                <Link
-                  key={video.id}
-                  href={`/watch/${video.id}`}
-                  className="group flex gap-3 rounded-xl p-1.5 transition hover:bg-muted/50"
-                >
-                  {/* Thumbnail */}
-                  <div className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-lg bg-muted">
-                    <img
-                      src={video.thumbnail}
-                      alt={video.title}
-                      className="h-full w-full object-cover"
-                    />
-                    <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.5 text-[10px] font-medium text-white">
-                      {video.duration}
-                    </span>
-                  </div>
+              {relatedVideos.length === 0 && !loading ? (
+                <p className="text-xs text-muted-foreground text-center py-4">
+                  Tidak ada video terkait.
+                </p>
+              ) : (
+                relatedVideos.map((video) => (
+                  <Link
+                    key={video.id}
+                    href={`/watch/${video.id}`}
+                    className="group flex gap-3 rounded-xl p-1.5 transition hover:bg-muted/50"
+                  >
+                    {/* Thumbnail */}
+                    <div className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-lg bg-muted">
+                      <img
+                        src={getMediaUrl(video.thumbnail)}
+                        alt={video.title}
+                        className="h-full w-full object-cover"
+                      />
+                      <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.5 text-[10px] font-medium text-white">
+                        {video.duration}
+                      </span>
+                    </div>
 
-                  {/* Info */}
-                  <div className="min-w-0 flex-1">
-                    <h3 className="line-clamp-2 text-xs font-semibold leading-snug transition group-hover:text-primary">
-                      {video.title}
-                    </h3>
-                    <p className="mt-1 text-[11px] text-muted-foreground">
-                      {video.date}
-                    </p>
-                  </div>
-                </Link>
-              ))}
+                    {/* Info */}
+                    <div className="min-w-0 flex-1">
+                      <h3 className="line-clamp-2 text-xs font-semibold leading-snug transition group-hover:text-primary">
+                        {video.title}
+                      </h3>
+                      <p className="mt-1 text-[11px] text-muted-foreground">
+                        {video.date}
+                      </p>
+                    </div>
+                  </Link>
+                ))
+              )}
             </div>
           </div>
         </div>
