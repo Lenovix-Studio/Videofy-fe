@@ -170,10 +170,39 @@ export default function WatchPage({ params }: PageProps) {
     window.location.href = `${BACKEND_URL}/videos/${currentVideo.id}/download`;
   };
 
-  // Handler Favorite Toggle (UI state)
-  const handleToggleFavorite = () => {
+  // Handler Favorite
+  const handleToggleFavorite = async () => {
+    if (!currentVideo) return;
+
+    const BACKEND_URL =
+      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
     setIsFavorite((prev) => !prev);
-    // TODO: Tambahkan panggillan API POST/DELETE untuk favorite jika backend sudah siap
+
+    try {
+      const response = await fetch(
+        `${BACKEND_URL}/videos/${currentVideo.id}/favorite`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        },
+      );
+
+      if (!response.ok) {
+        throw new Error("Gagal memproses favorit");
+      }
+
+      const data = await response.json();
+
+      setIsFavorite(data.isFavorite);
+    } catch (error) {
+      console.error("Error toggling favorite:", error);
+
+      setIsFavorite((prev) => !prev);
+      alert("Terjadi kendala koneksi. Gagal memperbarui video favorit.");
+    }
   };
 
   if (loading) {
