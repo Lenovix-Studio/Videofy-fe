@@ -10,6 +10,8 @@ import {
   Tag,
   Link as LinkIcon,
   ImageIcon,
+  Loader2,
+  ArrowUpFromLine,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
@@ -192,10 +194,22 @@ export default function UploadPage() {
             {!isSuccess && (
               <Button
                 type="button"
+                size="sm"
                 onClick={handlePreSubmit}
                 disabled={!selectedFile || !title.trim() || isUploading}
+                className="gap-1.5 font-medium shadow-sm transition-all"
               >
-                {isUploading ? "Mengunggah..." : "Publish"}
+                {isUploading ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                    <span>Mengunggah...</span>
+                  </>
+                ) : (
+                  <>
+                    <ArrowUpFromLine className="h-4 w-4" />
+                    <span>Publish</span>
+                  </>
+                )}
               </Button>
             )}
           </>

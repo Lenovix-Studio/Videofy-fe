@@ -15,7 +15,12 @@ import {
   Eye,
   Loader2,
 } from "lucide-react";
-import { formatFileSize, formatDuration, formatDate } from "@/lib/helper";
+import {
+  formatFileSize,
+  formatDuration,
+  formatDate,
+  getMediaUrl,
+} from "@/lib/helper";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
@@ -78,11 +83,6 @@ interface RelatedVideo {
   duration: string;
   date: string;
 }
-
-const getMediaUrl = (path: string): string => {
-  if (!path) return "";
-  return path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
-};
 
 export default function WatchPage({ params }: PageProps) {
   const resolvedParams = use(params);
@@ -258,11 +258,15 @@ export default function WatchPage({ params }: PageProps) {
                 <HardDrive className="h-3.5 w-3.5" />
                 <span>{formatFileSize(currentVideo.size)}</span>
               </div>
-              <Separator orientation="vertical" className="h-3" />
-              <div className="flex items-center gap-1">
-                <Globe className="h-3.5 w-3.5" />
-                <span>{currentVideo.source || "Local Storage"}</span>
-              </div>
+              {currentVideo.source && (
+                <>
+                  <Separator orientation="vertical" className="h-3" />
+                  <div className="flex items-center gap-1">
+                    <Globe className="h-3.5 w-3.5" />
+                    <span>{currentVideo.source}</span>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* Channel Info & Actions Bar */}

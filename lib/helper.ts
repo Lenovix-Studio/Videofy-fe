@@ -1,3 +1,10 @@
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+
+export const getMediaUrl = (path: string): string => {
+  if (!path) return "";
+  return path.startsWith("http") ? path : `${API_BASE_URL}${path}`;
+};
+
 // Format file size (KB, MB, GB, dst)
 export const formatFileSize = (bytes: number): string => {
   if (!bytes) return "0 B";
