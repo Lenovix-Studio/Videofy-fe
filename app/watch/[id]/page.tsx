@@ -40,6 +40,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import notFound from "@/app/not-found";
 import WatchLoading from "@/app/loading";
+import { toast } from "sonner";
 
 interface PageProps {
   params: Promise<{
@@ -177,7 +178,7 @@ export default function WatchPage({ params }: PageProps) {
 
     try {
       const response = await fetch(
-        `${BACKEND_URL}/videos/${currentVideo.id}/favorite`,
+        `${BACKEND_URL}/favorites/${currentVideo.id}/favorite`,
         {
           method: "POST",
           headers: {
@@ -193,11 +194,9 @@ export default function WatchPage({ params }: PageProps) {
       const data = await response.json();
 
       setIsFavorite(data.isFavorite);
-    } catch (error) {
-      console.error("Error toggling favorite:", error);
-
+    } catch (error: any) {
+      toast.error("Error toggling favorite:", error);
       setIsFavorite((prev) => !prev);
-      alert("Terjadi kendala koneksi. Gagal memperbarui video favorit.");
     }
   };
 
