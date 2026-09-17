@@ -33,13 +33,58 @@ import {
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
 export default function SettingsPage() {
   const [isResetting, setIsResetting] = useState(false);
+  const [isDeletingFavorites, setIsDeletingFavorites] = useState(false);
+  const [isDeletingHistory, setIsDeletingHistory] = useState(false);
+
+  const handleClearFavorites = async () => {
+    try {
+      setIsDeletingFavorites(true);
+      const res = await fetch(`${API_URL}/favorites/clear-all`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Gagal menghapus favorit");
+
+      toast.success("Seluruh favorit berhasil dihapus");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error(error);
+      toast.error("Terjadi kesalahan saat menghapus favorit");
+    } finally {
+      setIsDeletingFavorites(false);
+    }
+  };
+
+  const handleClearHistory = async () => {
+    try {
+      setIsDeletingHistory(true);
+      const res = await fetch(`${API_URL}/history/clear-all`, {
+        method: "DELETE",
+      });
+
+      if (!res.ok) throw new Error("Gagal menghapus riwayat");
+
+      toast.success("Seluruh riwayat tontonan berhasil dihapus");
+      setTimeout(() => {
+        window.location.reload();
+      }, 1500);
+    } catch (error) {
+      console.error(error);
+      toast.error("Terjadi kesalahan saat menghapus riwayat");
+    } finally {
+      setIsDeletingHistory(false);
+    }
+  };
 
   // Reset API
   const handleResetDatabase = async () => {
     setIsResetting(true);
-    const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
     try {
       const response = await fetch(`${API_URL}/system/reset`, {
@@ -121,6 +166,7 @@ export default function SettingsPage() {
                           variant="outline"
                           size="sm"
                           className="gap-2 shrink-0"
+                          disabled={isDeletingFavorites}
                         >
                           <Trash2 className="h-4 w-4" /> Hapus
                         </Button>
@@ -138,7 +184,10 @@ export default function SettingsPage() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        <AlertDialogAction
+                          onClick={handleClearFavorites}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
                           Hapus Favorit
                         </AlertDialogAction>
                       </AlertDialogFooter>
@@ -165,6 +214,7 @@ export default function SettingsPage() {
                           variant="outline"
                           size="sm"
                           className="gap-2 shrink-0"
+                          disabled={isDeletingHistory}
                         >
                           <Trash2 className="h-4 w-4" /> Hapus
                         </Button>
@@ -182,7 +232,10 @@ export default function SettingsPage() {
                       </AlertDialogHeader>
                       <AlertDialogFooter>
                         <AlertDialogCancel>Batal</AlertDialogCancel>
-                        <AlertDialogAction className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        <AlertDialogAction
+                          onClick={handleClearHistory}
+                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                        >
                           Hapus Riwayat
                         </AlertDialogAction>
                       </AlertDialogFooter>
