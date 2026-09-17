@@ -1,95 +1,102 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
-import { History, Play, Trash2, Search, Clock } from "lucide-react";
-
+import { History, Play, Trash2, Search, Clock, Loader2 } from "lucide-react";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 
-// Data Dummy Riwayat Tontonan (Dikelompokkan Berdasarkan Waktu Waktu Tonton)
-const initialHistoryGroups = [
-  {
-    group: "Today",
-    videos: [
-      {
-        id: "1",
-        title: "Building Videofy - Next.js 15 & Tailwind CSS Full Tutorial",
-        views: 12400,
-        date: "2 days ago",
-        duration: "24:15",
-        thumbnail: "https://picsum.photos/seed/videofy/600/340",
-        uploader: "Kamil Sudarmi",
-        watchedAt: "10:30 AM",
-      },
-      {
-        id: "2",
-        title: "Advanced Web Scraping with Python & Selenium",
-        views: 8200,
-        date: "1 week ago",
-        duration: "14:20",
-        thumbnail: "https://picsum.photos/seed/scrape/600/340",
-        uploader: "Tech Academy",
-        watchedAt: "08:15 AM",
-      },
-    ],
-  },
-  {
-    group: "Yesterday",
-    videos: [
-      {
-        id: "3",
-        title: "React Native & Expo Setup Guide 2026",
-        views: 15400,
-        date: "2 weeks ago",
-        duration: "22:05",
-        thumbnail: "https://picsum.photos/seed/expo/600/340",
-        uploader: "Mobile Dev Hub",
-        watchedAt: "Yesterday",
-      },
-      {
-        id: "5",
-        title: "Hearts of Iron 4: Complete Resource & Supply Guide",
-        views: 28900,
-        date: "3 days ago",
-        duration: "18:40",
-        thumbnail: "https://picsum.photos/seed/hoi4/600/340",
-        uploader: "Strategy Master",
-        watchedAt: "Yesterday",
-      },
-    ],
-  },
-];
+interface HistoryVideo {
+  id: string;
+  historyId: string;
+  title: string;
+  thumbnail: string;
+  duration: string;
+  watchedAt: string;
+}
+
+interface HistoryGroup {
+  group: string;
+  videos: HistoryVideo[];
+}
+
+interface Meta {
+  totalVideos: number;
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+}
 
 export default function HistoryPage() {
-  const [historyGroups, setHistoryGroups] = useState(initialHistoryGroups);
-  const [searchQuery, setSearchQuery] = useState("");
+  const [historyGroups, setHistoryGroups] = useState<HistoryGroup[]>([]);
+  const [meta, setMeta] = useState<Meta | null>(null);
+  const [searchQuery, setSearchQuery] = useState<string>("");
+  const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  // Handler Hapus Satu Video dari Riwayat
-  const handleRemoveHistory = (groupIdx: number, videoId: string) => {
-    setHistoryGroups((prevGroups) => {
-      return prevGroups
-        .map((group, idx) => {
-          if (idx === groupIdx) {
-            return {
-              ...group,
-              videos: group.videos.filter((v) => v.id !== videoId),
-            };
-          }
-          return group;
-        })
-        .filter((group) => group.videos.length > 0); // Hapus grup jika sudah kosong
-    });
+  const API_BASE_URL =
+    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+
+  // Fetch data history dari NestJS API
+  const fetchHistory = async () => {
+    try {
+      setIsLoading(true);
+      const res = await fetch(`${API_BASE_URL}/history`, {
+        cache: "no-store",
+      });
+
+      if (!res.ok) {
+        throw new Error("Gagal mengambil data history");
+      }
+
+      const data = await res.json();
+      setHistoryGroups(data.historyGroups || []);
+      setMeta(data.meta || null);
+    } catch (error) {
+      console.error("Error fetching history:", error);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
-  // Hitung Total Video Riwayat
-  const totalVideos = historyGroups.reduce(
-    (acc, group) => acc + group.videos.length,
-    0,
-  );
+  useEffect(() => {
+    fetchHistory();
+  }, []);
+
+  // Handle hapus item riwayat tontonan
+  const handleRemoveHistory = async (videoId: string) => {
+    setHistoryGroups((prevGroups) =>
+      prevGroups
+        .map((group) => ({
+          ...group,
+          videos: group.videos.filter((v) => v.id !== videoId),
+        }))
+        .filter((group) => group.videos.length > 0),
+    );
+
+    setMeta((prevMeta) => {
+      if (!prevMeta) return null;
+      return {
+        ...prevMeta,
+        totalVideos: Math.max(0, prevMeta.totalVideos - 1),
+      };
+    });
+
+    try {
+      const res = await fetch(`${API_BASE_URL}/history/video/${videoId}`, {
+        method: "DELETE",
+      });
+
+      if (res.ok) {
+        fetchHistory();
+      }
+    } catch (error) {
+      console.error("Error deleting history:", error);
+      fetchHistory();
+    }
+  };
 
   return (
     <div className="min-h-screen bg-background text-foreground">
@@ -114,10 +121,14 @@ export default function HistoryPage() {
       {/* Main Content Area */}
       <main className="lg:pl-52 pt-20 pb-12 px-4 lg:px-8">
         <div className="mx-auto max-w-[1600px] space-y-6">
-          {/* History Lists grouped by date */}
-          {totalVideos > 0 ? (
+          {isLoading ? (
+            <div className="flex h-[50vh] flex-col items-center justify-center gap-3 text-muted-foreground">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+              <p className="text-sm">Memuat riwayat tontonan...</p>
+            </div>
+          ) : (meta?.totalVideos ?? 0) > 0 ? (
             <div className="space-y-8">
-              {historyGroups.map((group, groupIdx) => {
+              {historyGroups.map((group) => {
                 const filteredVideos = group.videos.filter((video) =>
                   video.title.toLowerCase().includes(searchQuery.toLowerCase()),
                 );
@@ -133,7 +144,7 @@ export default function HistoryPage() {
                     <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
                       {filteredVideos.map((video) => (
                         <Card
-                          key={video.id}
+                          key={video.historyId}
                           className="group overflow-hidden border-none bg-transparent shadow-none pt-0"
                         >
                           <CardContent className="p-0 space-y-3">
@@ -144,7 +155,11 @@ export default function HistoryPage() {
                             >
                               <div className="relative aspect-video overflow-hidden rounded-xl bg-muted">
                                 <img
-                                  src={video.thumbnail}
+                                  src={
+                                    video.thumbnail.startsWith("http")
+                                      ? video.thumbnail
+                                      : `http://localhost:3001${video.thumbnail}`
+                                  }
                                   alt={video.title}
                                   className="h-full w-full object-cover"
                                 />
@@ -156,10 +171,13 @@ export default function HistoryPage() {
                                   </div>
                                 </div>
 
+                                {/* Tombol Hapus */}
                                 <button
+                                  type="button"
                                   onClick={(e) => {
+                                    e.preventDefault();
                                     e.stopPropagation();
-                                    handleRemoveHistory(groupIdx, video.id);
+                                    handleRemoveHistory(video.historyId);
                                   }}
                                   title="Hapus dari Riwayat"
                                   className="absolute top-2 right-2 z-10 flex h-8 w-8 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition hover:bg-destructive hover:text-destructive-foreground opacity-0 group-hover:opacity-100"
@@ -175,7 +193,7 @@ export default function HistoryPage() {
                             </Link>
 
                             {/* Meta Info */}
-                            <div className="flex items-start justify-between gap-2 px-4">
+                            <div className="flex items-start justify-between gap-2 px-1">
                               <div className="min-w-0 flex-1 space-y-1">
                                 <Link href={`/watch/${video.id}`}>
                                   <h3 className="line-clamp-1 text-sm font-semibold leading-snug transition group-hover:text-primary">
