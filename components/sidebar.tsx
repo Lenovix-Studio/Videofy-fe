@@ -36,27 +36,8 @@ export function Sidebar() {
     <aside className="fixed bottom-0 left-0 top-16 hidden w-52 border-r bg-background lg:block">
       <nav className="flex h-full flex-col justify-between overflow-y-auto p-3">
         <div className="space-y-6">
-          {/* Main Section */}
-          <div className="space-y-1">
-            <SidebarItem
-              href="/"
-              icon={<Home className="h-4 w-4" />}
-              label="Home"
-            />
-            <SidebarItem
-              href="/explore"
-              icon={<Compass className="h-4 w-4" />}
-              label="Explore"
-            />
-          </div>
-
-          <Separator />
-
           {/* Library / Personal Collection */}
           <div>
-            <div className="px-3 pb-2 text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-              Library
-            </div>
             <div className="space-y-1">
               <SidebarItem
                 href="/favorites"
