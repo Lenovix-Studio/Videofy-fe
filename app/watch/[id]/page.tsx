@@ -41,6 +41,7 @@ import {
 import notFound from "@/app/not-found";
 import WatchLoading from "@/app/loading";
 import { toast } from "sonner";
+import { CustomMediaPlayer } from "@/components/CustomMediaPlayer";
 
 interface PageProps {
   params: Promise<{
@@ -217,14 +218,11 @@ export default function WatchPage({ params }: PageProps) {
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 xl:grid-cols-4">
           {/* Main Video Section (Left Column) */}
           <div className="lg:col-span-2 xl:col-span-3">
-            {/* HTML5 Video Player */}
+            {/* Custom Media Player */}
             <div className="relative aspect-video overflow-hidden rounded-2xl bg-black shadow-lg">
-              <video
+              <CustomMediaPlayer
                 src={getMediaUrl(currentVideo.videoUrl)}
                 poster={getMediaUrl(currentVideo.thumbnailUrl)}
-                controls
-                autoPlay
-                className="h-full w-full object-contain"
               />
             </div>
 
