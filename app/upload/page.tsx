@@ -1,6 +1,12 @@
 "use client";
 
-import { useState, useRef } from "react";
+import {
+  useState,
+  useRef,
+  useEffect,
+  KeyboardEvent,
+  ClipboardEvent,
+} from "react";
 import {
   Upload,
   FileVideo,
@@ -30,6 +36,14 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Header } from "@/components/header";
+import { Badge } from "@/components/ui/badge";
+
+interface TagOption {
+  id: string;
+  name: string;
+  slug: string;
+  count: number;
+}
 
 export default function UploadPage() {
   const [title, setTitle] = useState("");
@@ -45,9 +59,40 @@ export default function UploadPage() {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isSuccess, setIsSuccess] = useState(false);
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState("");
+  const [availableTags, setAvailableTags] = useState<TagOption[]>([]);
+  const [isFetchingTags, setIsFetchingTags] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
+
+  // Fetch tag dengan query search dinamis + debouncing
+  useEffect(() => {
+    const timer = setTimeout(async () => {
+      setIsFetchingTags(true);
+      try {
+        const API_URL = process.env.NEXT_PUBLIC_API_URL;
+        const queryParams = new URLSearchParams({ limit: "20" });
+
+        if (tagInput.trim()) {
+          queryParams.append("search", tagInput.trim());
+        }
+
+        const res = await fetch(`${API_URL}/tags?${queryParams.toString()}`);
+        if (res.ok) {
+          const data: TagOption[] = await res.json();
+          setAvailableTags(data);
+        }
+      } catch (error) {
+        console.error("Gagal mengambil data tag:", error);
+      } finally {
+        setIsFetchingTags(false);
+      }
+    }, 300); // Delay 300ms untuk menekan jumlah request ke API
+
+    return () => clearTimeout(timer);
+  }, [tagInput]);
 
   const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
@@ -116,7 +161,51 @@ export default function UploadPage() {
     setShowConfirmDialog(true);
   };
 
-  // Eksekusi API Upload
+  // Fungsi helper untuk menambah satu atau banyak tag sekaligus
+  const addTags = (tagsToAdd: string[]) => {
+    setSelectedTags((prev) => {
+      const updated = [...prev];
+      tagsToAdd.forEach((raw) => {
+        const cleaned = raw.trim();
+        if (
+          cleaned &&
+          !updated.some((t) => t.toLowerCase() === cleaned.toLowerCase())
+        ) {
+          updated.push(cleaned);
+        }
+      });
+      return updated;
+    });
+    setTagInput("");
+  };
+
+  // Handler Event Paste (Copas)
+  const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
+    const pastedText = e.clipboardData.getData("text");
+    // Jika teks mengandung koma atau baris baru (\n)
+    if (pastedText.includes(",") || pastedText.includes("\n")) {
+      e.preventDefault();
+      const tagsArray = pastedText.split(/,|\n/);
+      addTags(tagsArray);
+    }
+  };
+
+  // Handler keyboard (Enter / Koma / Backspace)
+  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === "Enter" || e.key === ",") {
+      e.preventDefault();
+      addTags([tagInput]);
+    } else if (e.key === "Backspace" && !tagInput && selectedTags.length > 0) {
+      setSelectedTags((prev) => prev.slice(0, -1));
+    }
+  };
+
+  // Handler menghapus tag yang dipilih
+  const removeTag = (tagToRemove: string) => {
+    setSelectedTags((prev) => prev.filter((t) => t !== tagToRemove));
+  };
+
+  // Eksekusi API Upload Video
   const executeUpload = async () => {
     setShowConfirmDialog(false);
     setIsUploading(true);
@@ -126,7 +215,11 @@ export default function UploadPage() {
     formData.append("title", title);
     if (description) formData.append("description", description);
     if (source) formData.append("source", source);
-    if (tags) formData.append("tagIds", tags);
+
+    if (selectedTags.length > 0) {
+      formData.append("tagIds", selectedTags.join(","));
+    }
+
     formData.append("video", selectedFile as Blob);
     if (thumbnailFile) {
       formData.append("thumbnail", thumbnailFile as Blob);
@@ -197,6 +290,14 @@ export default function UploadPage() {
     }
   };
 
+  // Filter tag dari API yang belum dipilih di input
+  const unselectedAvailableTags = availableTags.filter(
+    (tag) =>
+      !selectedTags.some(
+        (selected) => selected.toLowerCase() === tag.name.toLowerCase(),
+      ),
+  );
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
@@ -236,7 +337,7 @@ export default function UploadPage() {
       <main className="mx-auto max-w-4xl px-4 pt-24 pb-16">
         <form onSubmit={handlePreSubmit} className="space-y-8">
           {/* Metadata Section */}
-          <div className="space-y-6">
+          <div className="space-y-5">
             {/* Title */}
             <div className="space-y-2">
               <Label htmlFor="title" className="text-sm font-medium">
@@ -264,136 +365,192 @@ export default function UploadPage() {
                 value={description}
                 onChange={(e) => setDescription(e.target.value)}
                 disabled={isUploading}
+                className="resize-y"
               />
             </div>
 
-            {/* Tags & Source Grid */}
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              {/* Source */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="source"
-                  className="text-sm font-medium flex items-center gap-1.5"
-                >
-                  <LinkIcon className="h-4 w-4 text-muted-foreground" /> Source
-                </Label>
-                <Input
-                  id="source"
-                  type="url"
-                  placeholder="https://example.com/video-source"
-                  value={source}
-                  onChange={(e) => setSource(e.target.value)}
-                  disabled={isUploading}
-                />
-              </div>
-
-              {/* Tags */}
-              <div className="space-y-2">
-                <Label
-                  htmlFor="tags"
-                  className="text-sm font-medium flex items-center gap-1.5"
-                >
-                  <Tag className="h-4 w-4 text-muted-foreground" /> Tag
-                  (Pisahkan dengan koma)
-                </Label>
-                <Input
-                  id="tags"
-                  placeholder="react, nextjs, tutorial"
-                  value={tags}
-                  onChange={(e) => setTags(e.target.value)}
-                  disabled={isUploading}
-                />
-              </div>
-            </div>
-
-            {/* Thumbnail */}
-            <div className="space-y-3 pt-2">
-              <div>
-                <Label className="text-sm font-semibold flex items-center gap-2">
-                  <ImageIcon className="h-4 w-4 text-primary" />
-                  Thumbnail Custom (Opsional)
-                </Label>
-                <p className="text-xs text-muted-foreground mt-0.5">
-                  Jika dikosongkan, thumbnail akan dibuat otomatis dari frame
-                  awal video.
-                </p>
-              </div>
-
-              <input
-                ref={thumbInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleThumbSelect}
-                className="hidden"
+            {/* Source */}
+            <div className="space-y-2">
+              <Label
+                htmlFor="source"
+                className="text-sm font-medium flex items-center gap-1.5"
+              >
+                <LinkIcon className="h-4 w-4 text-muted-foreground" /> Source
+              </Label>
+              <Input
+                id="source"
+                type="url"
+                placeholder="https://example.com/video-source"
+                value={source}
+                onChange={(e) => setSource(e.target.value)}
                 disabled={isUploading}
               />
+            </div>
 
-              {!thumbnailFile ? (
-                <div
-                  onClick={() => !isUploading && thumbInputRef.current?.click()}
-                  className={`group flex items-center gap-3 rounded-xl border-2 border-dashed p-3 transition-all cursor-pointer ${
-                    isUploading
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:border-primary/50 hover:bg-muted/40"
-                  }`}
-                >
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                    <ImageIcon className="h-5 w-5" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold text-foreground">
-                      Unggah Gambar Custom
-                    </p>
-                    <p className="text-[11px] text-muted-foreground truncate">
-                      Format PNG, JPG, WebP (Maks 5MB)
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
+            {/* Tags Section (Full Width) */}
+            <div className="space-y-2.5 pt-1">
+              <Label
+                htmlFor="tags"
+                className="text-sm font-medium flex items-center gap-1.5"
+              >
+                <Tag className="h-4 w-4 text-muted-foreground" /> Tag
+              </Label>
+
+              {/* Input Box dengan Badge Terpilih */}
+              <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-background p-2 transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 min-h-10.5">
+                {selectedTags.map((tag) => (
+                  <Badge
+                    key={tag}
                     variant="secondary"
-                    size="sm"
-                    disabled={isUploading}
-                    className="shrink-0 h-8 text-xs font-medium"
+                    className="flex items-center gap-1 pl-2.5 pr-1 py-1 text-xs font-normal"
                   >
-                    Pilih Gambar
-                  </Button>
+                    {tag}
+                    <button
+                      type="button"
+                      onClick={() => removeTag(tag)}
+                      disabled={isUploading}
+                      className="rounded-full p-0.5 hover:bg-muted-foreground/20 transition-colors"
+                    >
+                      <X className="h-3 w-3" />
+                    </button>
+                  </Badge>
+                ))}
+
+                <div className="flex-1 flex items-center min-w-40">
+                  <Input
+                    id="tags"
+                    type="text"
+                    placeholder={
+                      selectedTags.length === 0
+                        ? "Cari atau paste tag (pisahkan koma)..."
+                        : "Tambah tag..."
+                    }
+                    value={tagInput}
+                    onChange={(e) => setTagInput(e.target.value)}
+                    onKeyDown={handleKeyDown}
+                    onPaste={handlePaste}
+                    disabled={isUploading}
+                    className="border-0 p-0 h-6 text-sm focus-visible:ring-0 focus-visible:ring-offset-0 shadow-none w-full bg-transparent placeholder:text-muted-foreground"
+                  />
+                  {isFetchingTags && (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin text-muted-foreground ml-1 shrink-0" />
+                  )}
                 </div>
-              ) : (
-                <div className="flex items-center gap-3 p-2.5 rounded-xl border bg-card/60 backdrop-blur-sm shadow-sm">
-                  <div className="relative aspect-video h-14 rounded-lg overflow-hidden bg-black/10 border shrink-0">
-                    {thumbPreview && (
-                      <img
-                        src={thumbPreview}
-                        alt="Thumbnail Preview"
-                        className="h-full w-full object-cover transition-transform hover:scale-105"
-                      />
-                    )}
+              </div>
+
+              {/* Rekomendasi Tag dari Database */}
+              {unselectedAvailableTags.length > 0 && (
+                <div className="space-y-1.5 pt-1">
+                  <span className="text-xs text-muted-foreground">
+                    {tagInput ? "Hasil pencarian tag:" : "Tag populer:"}
+                  </span>
+                  <div className="flex flex-wrap gap-1.5 max-h-28 overflow-y-auto pr-1">
+                    {unselectedAvailableTags.map((tag) => (
+                      <Badge
+                        key={tag.id}
+                        variant="outline"
+                        className="cursor-pointer hover:bg-accent hover:text-accent-foreground transition-colors text-xs py-1 px-2.5 flex items-center gap-1.5 font-normal"
+                        onClick={() => !isUploading && addTags([tag.name])}
+                      >
+                        <span>+ {tag.name}</span>
+                        <span className="text-[10px] opacity-70 bg-muted px-1.5 py-0.2 rounded text-muted-foreground">
+                          {tag.count}
+                        </span>
+                      </Badge>
+                    ))}
                   </div>
-                  <div className="flex-1 min-w-0 space-y-0.5">
-                    <div className="flex items-center gap-1.5">
-                      <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
-                      <span className="text-xs font-semibold truncate text-foreground">
-                        {thumbnailFile.name}
-                      </span>
-                    </div>
-                    <p className="text-[11px] text-muted-foreground">
-                      {(thumbnailFile.size / (1024 * 1024)).toFixed(2)} MB
-                    </p>
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={handleRemoveThumb}
-                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
-                    disabled={isUploading}
-                    title="Hapus Thumbnail"
-                  >
-                    <X className="h-4 w-4" />
-                  </Button>
                 </div>
               )}
             </div>
+          </div>
+
+          {/* Thumbnail */}
+          <div className="space-y-3 pt-2">
+            <div>
+              <Label className="text-sm font-semibold flex items-center gap-2">
+                <ImageIcon className="h-4 w-4 text-primary" />
+                Thumbnail Custom (Opsional)
+              </Label>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                Jika dikosongkan, thumbnail akan dibuat otomatis dari frame awal
+                video.
+              </p>
+            </div>
+
+            <input
+              ref={thumbInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleThumbSelect}
+              className="hidden"
+              disabled={isUploading}
+            />
+
+            {!thumbnailFile ? (
+              <div
+                onClick={() => !isUploading && thumbInputRef.current?.click()}
+                className={`group flex items-center gap-3 rounded-xl border-2 border-dashed p-3 transition-all cursor-pointer ${
+                  isUploading
+                    ? "opacity-50 cursor-not-allowed"
+                    : "hover:border-primary/50 hover:bg-muted/40"
+                }`}
+              >
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                  <ImageIcon className="h-5 w-5" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-foreground">
+                    Unggah Gambar Custom
+                  </p>
+                  <p className="text-[11px] text-muted-foreground truncate">
+                    Format PNG, JPG, WebP (Maks 5MB)
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  disabled={isUploading}
+                  className="shrink-0 h-8 text-xs font-medium"
+                >
+                  Pilih Gambar
+                </Button>
+              </div>
+            ) : (
+              <div className="flex items-center gap-3 p-2.5 rounded-xl border bg-card/60 backdrop-blur-sm shadow-sm">
+                <div className="relative aspect-video h-14 rounded-lg overflow-hidden bg-black/10 border shrink-0">
+                  {thumbPreview && (
+                    <img
+                      src={thumbPreview}
+                      alt="Thumbnail Preview"
+                      className="h-full w-full object-cover transition-transform hover:scale-105"
+                    />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0 space-y-0.5">
+                  <div className="flex items-center gap-1.5">
+                    <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                    <span className="text-xs font-semibold truncate text-foreground">
+                      {thumbnailFile.name}
+                    </span>
+                  </div>
+                  <p className="text-[11px] text-muted-foreground">
+                    {(thumbnailFile.size / (1024 * 1024)).toFixed(2)} MB
+                  </p>
+                </div>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleRemoveThumb}
+                  className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                  disabled={isUploading}
+                  title="Hapus Thumbnail"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+            )}
           </div>
 
           {/* Video Upload */}
