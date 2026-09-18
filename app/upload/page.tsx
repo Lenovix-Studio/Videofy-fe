@@ -49,7 +49,6 @@ export default function UploadPage() {
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [source, setSource] = useState("");
-  const [tags, setTags] = useState("");
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [videoPreview, setVideoPreview] = useState<string | null>(null);
   const [thumbnailFile, setThumbnailFile] = useState<File | null>(null);
@@ -67,7 +66,7 @@ export default function UploadPage() {
   const fileInputRef = useRef<HTMLInputElement>(null);
   const thumbInputRef = useRef<HTMLInputElement>(null);
 
-  // Fetch tag dengan query search dinamis + debouncing
+  // Fetch tag
   useEffect(() => {
     const timer = setTimeout(async () => {
       setIsFetchingTags(true);
@@ -89,7 +88,7 @@ export default function UploadPage() {
       } finally {
         setIsFetchingTags(false);
       }
-    }, 300); // Delay 300ms untuk menekan jumlah request ke API
+    }, 300);
 
     return () => clearTimeout(timer);
   }, [tagInput]);
@@ -161,7 +160,6 @@ export default function UploadPage() {
     setShowConfirmDialog(true);
   };
 
-  // Fungsi helper untuk menambah satu atau banyak tag sekaligus
   const addTags = (tagsToAdd: string[]) => {
     setSelectedTags((prev) => {
       const updated = [...prev];
@@ -179,10 +177,8 @@ export default function UploadPage() {
     setTagInput("");
   };
 
-  // Handler Event Paste (Copas)
   const handlePaste = (e: ClipboardEvent<HTMLInputElement>) => {
     const pastedText = e.clipboardData.getData("text");
-    // Jika teks mengandung koma atau baris baru (\n)
     if (pastedText.includes(",") || pastedText.includes("\n")) {
       e.preventDefault();
       const tagsArray = pastedText.split(/,|\n/);
@@ -190,7 +186,6 @@ export default function UploadPage() {
     }
   };
 
-  // Handler keyboard (Enter / Koma / Backspace)
   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter" || e.key === ",") {
       e.preventDefault();
@@ -200,7 +195,6 @@ export default function UploadPage() {
     }
   };
 
-  // Handler menghapus tag yang dipilih
   const removeTag = (tagToRemove: string) => {
     setSelectedTags((prev) => prev.filter((t) => t !== tagToRemove));
   };
@@ -290,7 +284,6 @@ export default function UploadPage() {
     }
   };
 
-  // Filter tag dari API yang belum dipilih di input
   const unselectedAvailableTags = availableTags.filter(
     (tag) =>
       !selectedTags.some(
@@ -396,7 +389,6 @@ export default function UploadPage() {
                 <Tag className="h-4 w-4 text-muted-foreground" /> Tag
               </Label>
 
-              {/* Input Box dengan Badge Terpilih */}
               <div className="flex flex-wrap items-center gap-1.5 rounded-md border border-input bg-background p-2 transition-all focus-within:ring-2 focus-within:ring-ring focus-within:ring-offset-2 min-h-10.5">
                 {selectedTags.map((tag) => (
                   <Badge
@@ -438,7 +430,6 @@ export default function UploadPage() {
                 </div>
               </div>
 
-              {/* Rekomendasi Tag dari Database */}
               {unselectedAvailableTags.length > 0 && (
                 <div className="space-y-1.5 pt-1">
                   <span className="text-xs text-muted-foreground">
