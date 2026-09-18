@@ -66,11 +66,7 @@ export default function FavoritesPage() {
           ? video.thumbnail
           : `http://localhost:3001${video.thumbnail}`,
         duration: `${Math.floor(video.duration / 60)}:${String(video.duration % 60).padStart(2, "0")}`,
-        date: new Date(video.createdAt).toLocaleDateString("id-ID", {
-          year: "numeric",
-          month: "long",
-          day: "numeric",
-        }),
+        date: video.date,
       }));
       setVideos(mappedVideos);
       setMeta(result.meta);

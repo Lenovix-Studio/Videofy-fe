@@ -195,7 +195,7 @@ export default function WatchPage({ params }: PageProps) {
 
       setIsFavorite(data.isFavorite);
     } catch (error: any) {
-      toast.error("Error toggling favorite:", error);
+      toast.error(error.message || "Gagal mengubah status favorit");
       setIsFavorite((prev) => !prev);
     }
   };
