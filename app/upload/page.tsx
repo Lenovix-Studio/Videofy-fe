@@ -306,16 +306,18 @@ export default function UploadPage() {
               </div>
             </div>
 
-            {/* Custom Thumbnail (Opsional) */}
-            <div className="space-y-2 pt-2">
-              <Label className="text-sm font-medium flex items-center gap-1.5">
-                <ImageIcon className="h-4 w-4 text-muted-foreground" />{" "}
-                Thumbnail Custom (Opsional)
-              </Label>
-              <p className="text-xs text-muted-foreground">
-                Jika dikosongkan, thumbnail akan di-generate otomatis dari frame
-                video.
-              </p>
+            {/* Thumbnail */}
+            <div className="space-y-3 pt-2">
+              <div>
+                <Label className="text-sm font-semibold flex items-center gap-2">
+                  <ImageIcon className="h-4 w-4 text-primary" />
+                  Thumbnail Custom (Opsional)
+                </Label>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  Jika dikosongkan, thumbnail akan dibuat otomatis dari frame
+                  awal video.
+                </p>
+              </div>
 
               <input
                 ref={thumbInputRef}
@@ -327,49 +329,77 @@ export default function UploadPage() {
               />
 
               {!thumbnailFile ? (
-                <Button
-                  type="button"
-                  variant="outline"
-                  size="sm"
-                  onClick={() => thumbInputRef.current?.click()}
-                  disabled={isUploading}
+                <div
+                  onClick={() => !isUploading && thumbInputRef.current?.click()}
+                  className={`group flex items-center gap-3 rounded-xl border-2 border-dashed p-3 transition-all cursor-pointer ${
+                    isUploading
+                      ? "opacity-50 cursor-not-allowed"
+                      : "hover:border-primary/50 hover:bg-muted/40"
+                  }`}
                 >
-                  Pilih Gambar Thumbnail
-                </Button>
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                    <ImageIcon className="h-5 w-5" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-xs font-semibold text-foreground">
+                      Unggah Gambar Custom
+                    </p>
+                    <p className="text-[11px] text-muted-foreground truncate">
+                      Format PNG, JPG, WebP (Maks 5MB)
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    variant="secondary"
+                    size="sm"
+                    disabled={isUploading}
+                    className="shrink-0 h-8 text-xs font-medium"
+                  >
+                    Pilih Gambar
+                  </Button>
+                </div>
               ) : (
-                <div className="flex items-center gap-3 pt-1">
-                  <div className="relative aspect-video h-16 rounded-md overflow-hidden bg-muted border">
+                <div className="flex items-center gap-3 p-2.5 rounded-xl border bg-card/60 backdrop-blur-sm shadow-sm">
+                  <div className="relative aspect-video h-14 rounded-lg overflow-hidden bg-black/10 border shrink-0">
                     {thumbPreview && (
                       <img
                         src={thumbPreview}
                         alt="Thumbnail Preview"
-                        className="h-full w-full object-cover"
+                        className="h-full w-full object-cover transition-transform hover:scale-105"
                       />
                     )}
                   </div>
-                  <div className="flex flex-col gap-1">
-                    <span className="text-xs font-medium truncate max-w-50">
-                      {thumbnailFile.name}
-                    </span>
-                    <Button
-                      type="button"
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleRemoveThumb}
-                      className="h-6 px-2 text-xs text-destructive hover:bg-destructive/10"
-                      disabled={isUploading}
-                    >
-                      Hapus Thumbnail
-                    </Button>
+                  <div className="flex-1 min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-1.5">
+                      <span className="inline-block h-2 w-2 rounded-full bg-emerald-500 shrink-0" />
+                      <span className="text-xs font-semibold truncate text-foreground">
+                        {thumbnailFile.name}
+                      </span>
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {(thumbnailFile.size / (1024 * 1024)).toFixed(2)} MB
+                    </p>
                   </div>
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="icon"
+                    onClick={handleRemoveThumb}
+                    className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                    disabled={isUploading}
+                    title="Hapus Thumbnail"
+                  >
+                    <X className="h-4 w-4" />
+                  </Button>
                 </div>
               )}
             </div>
           </div>
 
-          {/* File Video Upload / Drag Zone */}
-          <div className="space-y-2">
-            <Label className="text-base font-semibold">
+          {/* Video Upload */}
+          <div className="space-y-3">
+            <Label className="text-base font-semibold flex items-center gap-2">
+              <FileVideo className="h-4 w-4 text-primary" />
               File Video <span className="text-destructive">*</span>
             </Label>
 
@@ -379,9 +409,9 @@ export default function UploadPage() {
                 onDragLeave={handleDragLeave}
                 onDrop={handleDrop}
                 onClick={() => fileInputRef.current?.click()}
-                className={`flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-12 text-center transition cursor-pointer ${
+                className={`group flex flex-col items-center justify-center rounded-2xl border-2 border-dashed p-10 text-center transition-all cursor-pointer ${
                   isDragging
-                    ? "border-primary bg-primary/5"
+                    ? "border-primary bg-primary/10 scale-[0.99]"
                     : "border-muted-foreground/25 hover:border-primary/50 hover:bg-muted/30"
                 }`}
               >
@@ -392,30 +422,28 @@ export default function UploadPage() {
                   onChange={handleFileSelect}
                   className="hidden"
                 />
-                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-muted">
-                  <Upload className="h-7 w-7 text-muted-foreground" />
+                <div className="flex h-14 w-14 items-center justify-center rounded-full bg-primary/10 text-primary group-hover:scale-110 transition-transform">
+                  <Upload className="h-7 w-7" />
                 </div>
-                <h3 className="mt-4 text-base font-semibold">
+                <h3 className="mt-4 text-base font-semibold text-foreground">
                   Tarik & Lepas file video di sini
                 </h3>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Atau klik untuk memilih file dari komputer (MP4, WebM, MOV)
+                <p className="mt-1 text-xs text-muted-foreground max-w-xs">
+                  Format yang didukung: MP4, WebM, MOV, atau MKV
                 </p>
                 <Button
                   variant="secondary"
                   size="sm"
                   type="button"
-                  className="mt-4"
+                  className="mt-5 font-medium shadow-sm"
                 >
-                  Pilih File
+                  Pilih File Dari Komputer
                 </Button>
               </div>
             ) : (
-              /* Card Preview Video yang Dipilih */
-              <Card className="relative overflow-hidden bg-muted/30">
-                <CardContent className="p-4 sm:p-6 flex flex-col md:flex-row gap-6 items-start">
-                  {/* Video Player Preview */}
-                  <div className="relative aspect-video w-full md:w-64 rounded-xl overflow-hidden bg-black shrink-0">
+              <Card className="relative overflow-hidden border bg-card/80 backdrop-blur-sm shadow-md transition-all">
+                <CardContent className="p-1 sm:px-4 flex flex-col md:flex-row gap-5 items-start">
+                  <div className="relative aspect-video w-full md:w-110 rounded-xl overflow-hidden bg-black shadow-inner shrink-0 group">
                     {videoPreview && (
                       <video
                         src={videoPreview}
@@ -423,42 +451,70 @@ export default function UploadPage() {
                         className="h-full w-full object-contain"
                       />
                     )}
+                    {thumbPreview && (
+                      <div className="absolute top-2 left-2 z-10 flex items-center gap-1 rounded-md bg-black/70 px-2 py-1 text-[10px] font-medium text-white backdrop-blur-md">
+                        <ImageIcon className="h-3 w-3 text-emerald-400" />
+                        <span>Thumbnail Diterapkan</span>
+                      </div>
+                    )}
                   </div>
 
-                  {/* File Info & Upload Progress */}
-                  <div className="flex-1 space-y-2 w-full min-w-0">
-                    <div className="flex items-start justify-between gap-2">
-                      <div className="flex items-center gap-2 truncate">
-                        <FileVideo className="h-5 w-5 text-primary shrink-0" />
-                        <span className="font-medium text-sm truncate">
-                          {selectedFile.name}
-                        </span>
+                  <div className="flex-1 space-y-3 w-full min-w-0">
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="space-y-1 min-w-0">
+                        <div className="flex items-center gap-2">
+                          <span className="inline-block h-2.5 w-2.5 rounded-full bg-primary animate-pulse shrink-0" />
+                          <h4
+                            className="font-semibold text-sm truncate text-foreground"
+                            title={selectedFile.name}
+                          >
+                            {selectedFile.name}
+                          </h4>
+                        </div>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <span className="inline-flex items-center rounded-md bg-muted px-2 py-0.5 font-medium text-[11px]">
+                            {(selectedFile.size / (1024 * 1024)).toFixed(2)} MB
+                          </span>
+                          <span>•</span>
+                          <span className="uppercase text-[11px] font-medium">
+                            {selectedFile.name.split(".").pop()}
+                          </span>
+                        </div>
                       </div>
+
                       <Button
                         type="button"
                         variant="ghost"
                         size="icon"
                         onClick={handleRemoveFile}
                         disabled={isUploading}
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive shrink-0"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 shrink-0"
+                        title="Hapus Video"
                       >
                         <X className="h-4 w-4" />
                       </Button>
                     </div>
 
-                    <p className="text-xs text-muted-foreground">
-                      Ukuran: {(selectedFile.size / (1024 * 1024)).toFixed(2)}{" "}
-                      MB
-                    </p>
-
-                    {/* Progress Bar saat proses upload */}
-                    {isUploading && (
-                      <div className="space-y-1.5 pt-2">
-                        <div className="flex justify-between text-xs font-medium">
-                          <span>Mengunggah...</span>
-                          <span>{uploadProgress}%</span>
+                    {isUploading ? (
+                      <div className="space-y-1.5 pt-1">
+                        <div className="flex justify-between text-xs font-semibold">
+                          <span className="text-primary flex items-center gap-1.5">
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            Mengunggah ke server...
+                          </span>
+                          <span className="text-foreground">
+                            {uploadProgress}%
+                          </span>
                         </div>
-                        <Progress value={uploadProgress} />
+                        <Progress
+                          value={uploadProgress}
+                          className="h-2 rounded-full"
+                        />
+                      </div>
+                    ) : (
+                      <div className="pt-1 flex items-center gap-2 text-xs text-emerald-600 dark:text-emerald-400 font-medium">
+                        <CheckCircle2 className="h-4 w-4" />
+                        <span>Video siap dipublikasikan</span>
                       </div>
                     )}
                   </div>
