@@ -16,6 +16,17 @@ interface Video {
   videoUrl: string;
   duration: string;
   createdAt: string;
+  tags?: VideoTagRelation[];
+}
+
+interface VideoTagRelation {
+  tag: Tag;
+}
+
+interface Tag {
+  id: string;
+  name: string;
+  slug: string;
 }
 
 const formatDurationFromSeconds = (totalSecondsStr: string | number) => {
@@ -115,6 +126,13 @@ function VideoCardBase({ video, priority = false }: VideoCardProps) {
               loading={priority ? "eager" : "lazy"}
               {...(priority && { fetchPriority: "high" })}
             />
+
+            {/* Badge Tag Pertama */}
+            {video.tags && video.tags.length > 0 && (
+              <span className="absolute top-2 left-2 rounded-md bg-black/70 backdrop-blur-xs px-2 py-0.5 text-[10px] font-medium text-white z-10 border border-white/10">
+                {video.tags[0].tag.name}
+              </span>
+            )}
 
             <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.5 text-[10px] font-medium text-white m-1 z-10">
               {formatDurationFromSeconds(video.duration)}
