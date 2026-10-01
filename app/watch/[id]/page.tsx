@@ -42,48 +42,13 @@ import notFound from "@/app/not-found";
 import WatchLoading from "@/app/loading";
 import { toast } from "sonner";
 import { CustomMediaPlayer } from "@/components/CustomMediaPlayer";
+import { BACKEND_URL } from "@/lib/constant";
+import { RelatedVideo, VideoDetail } from "@/lib/types";
 
 interface PageProps {
   params: Promise<{
     id: string;
   }>;
-}
-
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
-
-interface Tag {
-  id: string;
-  name: string;
-  slug: string;
-}
-
-interface VideoDetail {
-  id: string;
-  title: string;
-  description: string | null;
-  videoUrl: string;
-  thumbnailUrl: string;
-  filePath: string;
-  thumbnailPath: string;
-  fileName: string;
-  duration: number;
-  size: number;
-  mimeType: string;
-  uploader: string;
-  views: number;
-  source: string | null;
-  createdAt: string;
-  updatedAt: string;
-  isFavorite: boolean;
-  tags: Tag[];
-}
-
-interface RelatedVideo {
-  id: string;
-  title: string;
-  thumbnail: string;
-  duration: string;
-  date: string;
 }
 
 export default function WatchPage({ params }: PageProps) {
@@ -105,8 +70,8 @@ export default function WatchPage({ params }: PageProps) {
         setLoading(true);
 
         const [detailRes, relatedRes] = await Promise.all([
-          fetch(`${API_BASE_URL}/videos/${videoId}`),
-          fetch(`${API_BASE_URL}/videos/${videoId}/related`, {
+          fetch(`${BACKEND_URL}/videos/${videoId}`),
+          fetch(`${BACKEND_URL}/videos/${videoId}/related`, {
             cache: "no-store",
           }),
         ]);
@@ -141,7 +106,7 @@ export default function WatchPage({ params }: PageProps) {
   const handleDeleteVideo = async () => {
     try {
       setIsDeleting(true);
-      const res = await fetch(`${API_BASE_URL}/videos/${videoId}`, {
+      const res = await fetch(`${BACKEND_URL}/videos/${videoId}`, {
         method: "DELETE",
       });
 
@@ -162,18 +127,12 @@ export default function WatchPage({ params }: PageProps) {
   const handleDownload = () => {
     if (!currentVideo) return;
 
-    const BACKEND_URL =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
     window.location.href = `${BACKEND_URL}/videos/${currentVideo.id}/download`;
   };
 
   // Handler Favorite
   const handleToggleFavorite = async () => {
     if (!currentVideo) return;
-
-    const BACKEND_URL =
-      process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
     setIsFavorite((prev) => !prev);
 

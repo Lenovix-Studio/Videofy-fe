@@ -23,6 +23,7 @@ import {
 } from "lucide-react";
 import { getMediaUrl } from "@/lib/helper";
 import { toast } from "sonner";
+import { BACKEND_URL } from "@/lib/constant";
 
 export default function EditVideoPage() {
   const params = useParams();
@@ -54,7 +55,7 @@ export default function EditVideoPage() {
     async function fetchVideoData() {
       try {
         setIsLoading(true);
-        const res = await fetch(`http://localhost:3001/videos/${videoId}`);
+        const res = await fetch(`${BACKEND_URL}/videos/${videoId}`);
         if (!res.ok) throw new Error("Gagal mengambil data video.");
 
         const data = await res.json();
@@ -212,7 +213,7 @@ export default function EditVideoPage() {
         }
       };
 
-      xhr.open("PUT", `http://localhost:3001/videos/${videoId}`);
+      xhr.open("PUT", `${BACKEND_URL}/videos/${videoId}`);
       xhr.send(formData);
     } catch (err: any) {
       setIsUploading(false);

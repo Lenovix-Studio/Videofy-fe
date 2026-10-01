@@ -9,22 +9,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { toast } from "sonner";
-
-interface VideoFavorite {
-  id: string;
-  title: string;
-  thumbnail: string;
-  duration: number;
-  date: string;
-}
-
-interface PaginationMeta {
-  totalItems: number;
-  itemCount: number;
-  itemsPerPage: number;
-  totalPages: number;
-  currentPage: number;
-}
+import { PaginationMeta, VideoFavorite } from "@/lib/types";
+import { BACKEND_URL } from "@/lib/constant";
 
 export default function FavoritesPage() {
   const [videos, setVideos] = useState<VideoFavorite[]>([]);
@@ -54,7 +40,7 @@ export default function FavoritesPage() {
       });
 
       const response = await fetch(
-        `http://localhost:3001/favorites?${queryParams.toString()}`,
+        `${BACKEND_URL}/favorites?${queryParams.toString()}`,
       );
       if (!response.ok) throw new Error("Gagal memuat data favorit");
 
@@ -64,7 +50,7 @@ export default function FavoritesPage() {
         title: video.title,
         thumbnail: video.thumbnail.startsWith("http")
           ? video.thumbnail
-          : `http://localhost:3001${video.thumbnail}`,
+          : `${BACKEND_URL}${video.thumbnail}`,
         duration: `${Math.floor(video.duration / 60)}:${String(video.duration % 60).padStart(2, "0")}`,
         date: video.date,
       }));
@@ -85,7 +71,7 @@ export default function FavoritesPage() {
   const handleRemoveFavorite = async (videoId: string) => {
     try {
       const response = await fetch(
-        `http://localhost:3001/favorites/${videoId}/favorite`,
+        `${BACKEND_URL}/favorites/${videoId}/favorite`,
         {
           method: "POST",
           headers: {

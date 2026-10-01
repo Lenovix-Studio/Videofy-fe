@@ -8,27 +8,8 @@ import { Sidebar } from "@/components/sidebar";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-
-interface HistoryVideo {
-  id: string;
-  historyId: string;
-  title: string;
-  thumbnail: string;
-  duration: string;
-  watchedAt: string;
-}
-
-interface HistoryGroup {
-  group: string;
-  videos: HistoryVideo[];
-}
-
-interface Meta {
-  totalVideos: number;
-  currentPage: number;
-  totalPages: number;
-  hasNextPage: boolean;
-}
+import { HistoryGroup, Meta } from "@/lib/types";
+import { BACKEND_URL } from "@/lib/constant";
 
 export default function HistoryPage() {
   const [historyGroups, setHistoryGroups] = useState<HistoryGroup[]>([]);
@@ -36,14 +17,11 @@ export default function HistoryPage() {
   const [searchQuery, setSearchQuery] = useState<string>("");
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const API_BASE_URL =
-    process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
-
   // Fetch data history dari NestJS API
   const fetchHistory = async () => {
     try {
       setIsLoading(true);
-      const res = await fetch(`${API_BASE_URL}/history`, {
+      const res = await fetch(`${BACKEND_URL}/history`, {
         cache: "no-store",
       });
 
@@ -85,7 +63,7 @@ export default function HistoryPage() {
     });
 
     try {
-      const res = await fetch(`${API_BASE_URL}/history/video/${videoId}`, {
+      const res = await fetch(`${BACKEND_URL}/history/video/${videoId}`, {
         method: "DELETE",
       });
 
@@ -158,7 +136,7 @@ export default function HistoryPage() {
                                   src={
                                     video.thumbnail.startsWith("http")
                                       ? video.thumbnail
-                                      : `http://localhost:3001${video.thumbnail}`
+                                      : `${BACKEND_URL}${video.thumbnail}`
                                   }
                                   alt={video.title}
                                   className="h-full w-full object-cover"

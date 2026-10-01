@@ -10,13 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
-
-interface TagItem {
-  id: string;
-  name: string;
-  slug: string;
-  count: number;
-}
+import { BACKEND_URL } from "@/lib/constant";
+import { TagItem } from "@/lib/types";
 
 export default function TagsPage() {
   const [tagsList, setTagsList] = useState<TagItem[]>([]);
@@ -49,7 +44,7 @@ export default function TagsPage() {
       try {
         setIsLoading(true);
 
-        let url = "http://localhost:3001/tags?limit=20";
+        let url = `${BACKEND_URL}/tags?limit=20`;
         if (debouncedSearchQuery.trim() !== "") {
           url += `&search=${encodeURIComponent(debouncedSearchQuery)}`;
         }
@@ -62,14 +57,14 @@ export default function TagsPage() {
         const data: TagItem[] = await response.json();
         setTagsList(data);
       } catch (err: any) {
-        toast(err.message || "Terjadi kesalahan saat memuat data.");
+        toast.error(err.message || "Terjadi kesalahan saat memuat data tag.");
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchTags();
-  }, [debouncedSearchQuery]);
+  }, [debouncedSearchQuery, BACKEND_URL]);
 
   useEffect(() => {
     const fetchVideosByTag = async () => {
@@ -77,7 +72,7 @@ export default function TagsPage() {
       try {
         const tagParam =
           selectedTag && selectedTag !== "all" ? `tagId=${selectedTag}&` : "";
-        const url = `http://localhost:3001/tags/videos?${tagParam}page=${page}&limit=8`;
+        const url = `${BACKEND_URL}/tags/videos?${tagParam}page=${page}&limit=8`;
 
         const res = await fetch(url);
         if (!res.ok) throw new Error("Gagal mengambil data video");
@@ -89,7 +84,7 @@ export default function TagsPage() {
           title: video.title,
           thumbnail: video.thumbnailUrl.startsWith("http")
             ? video.thumbnailUrl
-            : `http://localhost:3001${video.thumbnailUrl}`,
+            : `${BACKEND_URL}${video.thumbnailUrl}`,
           duration: `${Math.floor(video.duration / 60)}:${String(video.duration % 60).padStart(2, "0")}`,
           date: new Date(video.createdAt).toLocaleDateString("id-ID", {
             year: "numeric",
@@ -104,14 +99,16 @@ export default function TagsPage() {
 
         setHasMore(page < result.meta.totalPages);
       } catch (error: any) {
-        toast.error(error);
+        toast.error(
+          error.message || "Terjadi kesalahan saat mengambil data video.",
+        );
       } finally {
         setIsVideoLoading(false);
       }
     };
 
     fetchVideosByTag();
-  }, [selectedTag, page]);
+  }, [selectedTag, page, BACKEND_URL]);
 
   const activeTagName =
     tagsList.find((t) => t.id === selectedTag)?.name || "Semua Video";

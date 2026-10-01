@@ -77,13 +77,11 @@ export function PlaylistCard({
           {/* Quick Actions Menu */}
           <div className="absolute top-2 right-2 z-10">
             <DropdownMenu>
-              <DropdownMenuTrigger>
-                <button
-                  className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70 cursor-pointer"
-                  onClick={(e) => e.stopPropagation()}
-                >
-                  <MoreVertical className="h-4 w-4" />
-                </button>
+              <DropdownMenuTrigger
+                className="flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity hover:bg-black/70 cursor-pointer outline-none"
+                onClick={(e) => e.stopPropagation()}
+              >
+                <MoreVertical className="h-4 w-4" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-40">
                 {onEdit && (

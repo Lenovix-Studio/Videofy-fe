@@ -37,13 +37,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Header } from "@/components/header";
 import { Badge } from "@/components/ui/badge";
-
-interface TagOption {
-  id: string;
-  name: string;
-  slug: string;
-  count: number;
-}
+import { TagOption } from "@/lib/types";
+import { BACKEND_URL } from "@/lib/constant";
 
 export default function UploadPage() {
   const [title, setTitle] = useState("");
@@ -71,14 +66,15 @@ export default function UploadPage() {
     const timer = setTimeout(async () => {
       setIsFetchingTags(true);
       try {
-        const API_URL = process.env.NEXT_PUBLIC_API_URL;
         const queryParams = new URLSearchParams({ limit: "20" });
 
         if (tagInput.trim()) {
           queryParams.append("search", tagInput.trim());
         }
 
-        const res = await fetch(`${API_URL}/tags?${queryParams.toString()}`);
+        const res = await fetch(
+          `${BACKEND_URL}/tags?${queryParams.toString()}`,
+        );
         if (res.ok) {
           const data: TagOption[] = await res.json();
           setAvailableTags(data);
@@ -221,7 +217,6 @@ export default function UploadPage() {
 
     try {
       const xhr = new XMLHttpRequest();
-      const API_URL = process.env.NEXT_PUBLIC_API_URL;
 
       xhr.upload.addEventListener("progress", (event) => {
         if (event.lengthComputable) {
@@ -276,7 +271,7 @@ export default function UploadPage() {
         }
       };
 
-      xhr.open("POST", `${API_URL}/videos/upload`);
+      xhr.open("POST", `${BACKEND_URL}/videos/upload`);
       xhr.send(formData);
     } catch (error: any) {
       setIsUploading(false);

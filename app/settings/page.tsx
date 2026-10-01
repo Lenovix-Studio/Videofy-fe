@@ -32,8 +32,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
-
-const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
+import { BACKEND_URL } from "@/lib/constant";
 
 export default function SettingsPage() {
   const [isResetting, setIsResetting] = useState(false);
@@ -43,7 +42,7 @@ export default function SettingsPage() {
   const handleClearFavorites = async () => {
     try {
       setIsDeletingFavorites(true);
-      const res = await fetch(`${API_URL}/favorites/clear-all`, {
+      const res = await fetch(`${BACKEND_URL}/favorites/clear-all`, {
         method: "DELETE",
       });
 
@@ -64,7 +63,7 @@ export default function SettingsPage() {
   const handleClearHistory = async () => {
     try {
       setIsDeletingHistory(true);
-      const res = await fetch(`${API_URL}/history/clear-all`, {
+      const res = await fetch(`${BACKEND_URL}/history/clear-all`, {
         method: "DELETE",
       });
 
@@ -87,7 +86,7 @@ export default function SettingsPage() {
     setIsResetting(true);
 
     try {
-      const response = await fetch(`${API_URL}/system/reset`, {
+      const response = await fetch(`${BACKEND_URL}/system/reset`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
