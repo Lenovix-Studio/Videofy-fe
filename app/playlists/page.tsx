@@ -66,12 +66,23 @@ export default function PlaylistsPage() {
     title: string;
     description: string;
     coverUrl?: string;
+    coverFile?: File | null;
   }) => {
+    const finalCoverUrl = data.coverFile
+      ? URL.createObjectURL(data.coverFile)
+      : data.coverUrl || null;
+
     if (editingPlaylist) {
       setPlaylists((prev) =>
         prev.map((p) =>
           p.id === editingPlaylist.id
-            ? { ...p, ...data, updatedAt: new Date().toISOString() }
+            ? {
+                ...p,
+                title: data.title,
+                description: data.description,
+                coverUrl: finalCoverUrl,
+                updatedAt: new Date().toISOString(),
+              }
             : p,
         ),
       );
@@ -81,7 +92,7 @@ export default function PlaylistsPage() {
         title: data.title,
         slug: data.title.toLowerCase().replace(/[^a-z0-9]+/g, "-"),
         description: data.description,
-        coverUrl: data.coverUrl || null,
+        coverUrl: finalCoverUrl,
         createdAt: new Date().toISOString(),
         updatedAt: new Date().toISOString(),
         stats: { totalVideos: 0, totalPhotos: 0 },
