@@ -2,8 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Home, Compass, Heart, History, Tags, Settings } from "lucide-react";
-
+import { Home, Heart, History, Tags, FilePlay, Settings } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
 
 interface SidebarItemProps {
@@ -14,7 +13,7 @@ interface SidebarItemProps {
 
 function SidebarItem({ href, icon, label }: SidebarItemProps) {
   const pathname = usePathname();
-  const active = pathname === href;
+  const active = pathname === href || pathname.startsWith(`${href}/`);
 
   return (
     <Link
@@ -36,6 +35,24 @@ export function Sidebar() {
     <aside className="fixed bottom-0 left-0 top-16 hidden w-52 border-r bg-background lg:block">
       <nav className="flex h-full flex-col justify-between overflow-y-auto p-3">
         <div className="space-y-6">
+          {/* Main Navigation */}
+          <div>
+            <div className="space-y-1">
+              <SidebarItem
+                href="/"
+                icon={<Home className="h-4 w-4" />}
+                label="Home"
+              />
+              <SidebarItem
+                href="/playlists"
+                icon={<FilePlay className="h-4 w-4" />}
+                label="Playlists"
+              />
+            </div>
+          </div>
+
+          <Separator />
+
           {/* Library / Personal Collection */}
           <div>
             <div className="space-y-1">
