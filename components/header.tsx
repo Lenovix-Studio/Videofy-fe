@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import Link from "next/link";
 import { Input } from "@/components/ui/input";
+import { RandomVideoButton } from "./RandomVideoButton";
 import { Button } from "@/components/ui/button";
 import { Film, Search, Upload } from "lucide-react";
 
@@ -40,19 +41,22 @@ export function Header({ left, center, right, className = "" }: HeaderProps) {
 
   // Right
   const defaultRight = (
-    <Button
-      variant="ghost"
-      className="rounded-full px-4 text-muted-foreground hover:text-foreground font-medium"
-    >
-      <Link
-        href="/upload"
-        title="Upload video"
-        className="flex items-center gap-2"
+    <div className="flex items-center gap-1">
+      <RandomVideoButton />
+      <Button
+        variant="ghost"
+        className="rounded-full px-4 text-muted-foreground hover:text-foreground font-medium"
       >
-        <Upload className="h-4 w-4" />
-        <span>Upload Video</span>
-      </Link>
-    </Button>
+        <Link
+          href="/upload"
+          title="Upload video"
+          className="flex items-center gap-2"
+        >
+          <Upload className="h-4 w-4" />
+          <span>Upload Video</span>
+        </Link>
+      </Button>
+    </div>
   );
 
   return (

@@ -1,8 +1,11 @@
 import React, { useState, useRef, useCallback } from "react";
 import Link from "next/link";
 import Image from "next/image";
-import { Play } from "lucide-react";
+import { Play, Heart } from "lucide-react";
+import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { BACKEND_URL } from "@/lib/constant";
 
 interface VideoCardProps {
   video: Video;
@@ -16,6 +19,7 @@ interface Video {
   videoUrl: string;
   duration: string;
   createdAt: string;
+  favorites?: any;
   tags?: VideoTagRelation[];
 }
 
@@ -50,19 +54,52 @@ function formatDate(dateString: string) {
   }
 }
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 function getFullMediaUrl(path: string) {
   if (!path) return "";
   if (path.startsWith("http://") || path.startsWith("https://")) {
     return path;
   }
-  return `${API_BASE_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+  return `${BACKEND_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
 function VideoCardBase({ video, priority = false }: VideoCardProps) {
-  const [isHovered, setIsHovered] = useState(false);
   const videoRef = useRef<HTMLVideoElement | null>(null);
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  const [isHovered, setIsHovered] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(!!video.favorites);
+  const [isLoadingFav, setIsLoadingFav] = useState(false);
+
+  const toggleFavorite = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (isLoadingFav) return;
+
+    setIsLoadingFav(true);
+    setIsFavorite(!isFavorite);
+
+    try {
+      const res = await fetch(`${BACKEND_URL}/favorites/${video.id}/favorite`, {
+        method: "POST",
+      });
+      if (!res.ok) throw new Error("Gagal mengubah status favorit");
+
+      const data = await res.json();
+      setIsFavorite(data.isFavorite);
+
+      if (data.isFavorite) {
+        toast.success("Ditambahkan ke favorit");
+      } else {
+        toast.success("Dihapus dari favorit");
+      }
+    } catch (err: any) {
+      toast.error(err.message);
+      setIsFavorite(isFavorite);
+    } finally {
+      setIsLoadingFav(false);
+    }
+  };
 
   const thumbnailSrc = getFullMediaUrl(video.thumbnailUrl);
   const videoSrc = getFullMediaUrl(video.videoUrl);
@@ -126,6 +163,22 @@ function VideoCardBase({ video, priority = false }: VideoCardProps) {
               loading={priority ? "eager" : "lazy"}
               {...(priority && { fetchPriority: "high" })}
             />
+
+            {/* Action Buttons */}
+            <div className="absolute top-2 right-2 z-20 flex flex-col gap-2">
+              <Button
+                type="button"
+                variant="secondary"
+                size="icon"
+                className={`h-7 w-7 rounded-full bg-black/60 backdrop-blur-md hover:bg-black/80 transition-colors ${isFavorite ? "text-red-500" : "text-white"}`}
+                onClick={toggleFavorite}
+                disabled={isLoadingFav}
+              >
+                <Heart
+                  className={`h-3.5 w-3.5 ${isFavorite ? "fill-current" : ""}`}
+                />
+              </Button>
+            </div>
 
             {/* Badge Tag Pertama */}
             {video.tags && video.tags.length > 0 && (
