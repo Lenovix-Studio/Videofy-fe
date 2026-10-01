@@ -153,6 +153,12 @@ export default function UploadPage() {
       toast.error("Silakan pilih file video terlebih dahulu.");
       return;
     }
+    
+    // Auto-add any pending tag in the input box before confirming
+    if (tagInput.trim()) {
+      addTags([tagInput]);
+    }
+    
     setShowConfirmDialog(true);
   };
 

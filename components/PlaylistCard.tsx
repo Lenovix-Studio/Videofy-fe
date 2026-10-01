@@ -19,6 +19,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Playlist } from "@/types/playlist";
+import { BACKEND_URL } from "@/lib/constant";
 
 interface PlaylistCardProps {
   playlist: Playlist;
@@ -34,6 +35,85 @@ export function PlaylistCard({
   const totalVideos = playlist.stats?.totalVideos ?? 0;
   const totalPhotos = playlist.stats?.totalPhotos ?? 0;
 
+  // Extract thumbnails from items
+  const thumbnails = (playlist.items || [])
+    .map(i => i.type === 'video' ? i.video?.thumbnailUrl : i.photo?.photoUrl)
+    .filter(Boolean) as string[];
+
+  const renderCover = () => {
+    // If a custom cover exists, use it
+    if (playlist.coverUrl) {
+      return (
+        <Image
+          src={playlist.coverUrl.startsWith('http') ? playlist.coverUrl : `${BACKEND_URL}${playlist.coverUrl}`}
+          alt={playlist.title}
+          fill
+          sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
+          className="object-cover transition-transform duration-500 group-hover:scale-105"
+        />
+      );
+    }
+
+    // If we have items for a collage
+    if (thumbnails.length > 0) {
+      if (thumbnails.length === 1) {
+        return (
+          <img
+            src={thumbnails[0].startsWith('http') ? thumbnails[0] : `${BACKEND_URL}${thumbnails[0]}`}
+            alt="Thumbnail"
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        );
+      }
+      
+      if (thumbnails.length === 2) {
+        return (
+          <div className="flex w-full h-full">
+            <img src={`${BACKEND_URL}${thumbnails[0]}`} className="w-1/2 h-full object-cover border-r border-background/20 transition-transform duration-500 group-hover:scale-105" alt="Thumb 1" />
+            <img src={`${BACKEND_URL}${thumbnails[1]}`} className="w-1/2 h-full object-cover border-l border-background/20 transition-transform duration-500 group-hover:scale-105" alt="Thumb 2" />
+          </div>
+        );
+      }
+
+      if (thumbnails.length === 3) {
+        return (
+          <div className="flex w-full h-full">
+            <div className="w-1/2 h-full border-r border-background/20 overflow-hidden">
+              <img src={`${BACKEND_URL}${thumbnails[0]}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt="Thumb 1" />
+            </div>
+            <div className="flex flex-col w-1/2 h-full border-l border-background/20 overflow-hidden">
+              <img src={`${BACKEND_URL}${thumbnails[1]}`} className="w-full h-1/2 object-cover border-b border-background/20 transition-transform duration-500 group-hover:scale-105" alt="Thumb 2" />
+              <img src={`${BACKEND_URL}${thumbnails[2]}`} className="w-full h-1/2 object-cover border-t border-background/20 transition-transform duration-500 group-hover:scale-105" alt="Thumb 3" />
+            </div>
+          </div>
+        );
+      }
+
+      // 4 or more
+      return (
+        <div className="grid grid-cols-2 grid-rows-2 w-full h-full overflow-hidden">
+          {thumbnails.slice(0, 4).map((thumb, idx) => (
+            <div key={idx} className={`relative overflow-hidden ${
+              idx === 0 ? 'border-r border-b border-background/20' :
+              idx === 1 ? 'border-l border-b border-background/20' :
+              idx === 2 ? 'border-r border-t border-background/20' :
+              'border-l border-t border-background/20'
+            }`}>
+              <img src={`${BACKEND_URL}${thumb}`} className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105" alt={`Thumb ${idx}`} />
+            </div>
+          ))}
+        </div>
+      );
+    }
+
+    // Fallback
+    return (
+      <div className="flex h-full w-full items-center justify-center bg-secondary/50 text-muted-foreground transition-transform duration-500 group-hover:scale-105">
+        <FilePlay className="h-12 w-12 stroke-[1.5]" />
+      </div>
+    );
+  };
+
   return (
     <Card className="group overflow-hidden border-border/60 bg-card hover:border-primary/50 transition-all duration-300 shadow-xs hover:shadow-md">
       <CardContent className="p-0">
@@ -42,24 +122,9 @@ export function PlaylistCard({
             href={`/playlists/${playlist.slug}`}
             className="block h-full w-full"
           >
-            {playlist.coverUrl ? (
-              <Image
-                src={playlist.coverUrl}
-                alt={playlist.title}
-                fill
-                sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
-                className="object-cover transition-transform duration-500 group-hover:scale-105"
-              />
-            ) : (
-              <div className="flex h-full w-full items-center justify-center bg-secondary/50 text-muted-foreground">
-                <FilePlay className="h-12 w-12 stroke-[1.5]" />
-              </div>
-            )}
+            {renderCover()}
 
             {/* Overlay Gradient */}
-            <div className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent opacity-80 group-hover:opacity-90 transition-opacity" />
-
-            {/* Content Counter Badges di atas Cover */}
             <div className="absolute bottom-3 left-3 right-3 flex items-center justify-between text-white text-xs font-medium">
               <div className="flex items-center gap-2">
                 <span className="flex items-center gap-1 rounded-md bg-black/60 backdrop-blur-md px-2 py-1 border border-white/10">

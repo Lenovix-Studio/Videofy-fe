@@ -10,7 +10,18 @@ import {
   Minimize,
   RotateCcw,
   RotateCw,
+  Settings,
+  PictureInPicture,
+  PictureInPicture2,
+  Loader2,
+  Gauge
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface CustomMediaPlayerProps {
   src: string;
@@ -28,12 +39,17 @@ export function CustomMediaPlayer({
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isWaiting, setIsWaiting] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [volume, setVolume] = useState(1);
   const [isMuted, setIsMuted] = useState(false);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [isPiP, setIsPiP] = useState(false);
+  const [playbackRate, setPlaybackRate] = useState(1);
   const [showControls, setShowControls] = useState(true);
+  const [hoverTime, setHoverTime] = useState<number | null>(null);
+  const [hoverPercent, setHoverPercent] = useState<number>(0);
 
   const togglePlay = useCallback(() => {
     if (!videoRef.current) return;
@@ -83,6 +99,37 @@ export function CustomMediaPlayer({
     }
   }, []);
 
+  const togglePiP = useCallback(async () => {
+    if (!videoRef.current) return;
+    try {
+      if (document.pictureInPictureElement) {
+        await document.exitPictureInPicture();
+        setIsPiP(false);
+      } else if (document.pictureInPictureEnabled) {
+        await videoRef.current.requestPictureInPicture();
+        setIsPiP(true);
+      }
+    } catch (err) {
+      console.error("PiP error:", err);
+    }
+  }, []);
+
+  const changePlaybackRate = (rate: number) => {
+    if (videoRef.current) {
+      videoRef.current.playbackRate = rate;
+      setPlaybackRate(rate);
+    }
+  };
+
+  // Reset state when src changes
+  useEffect(() => {
+    setIsPlaying(autoPlay);
+    setIsWaiting(false);
+    setCurrentTime(0);
+    setDuration(0);
+    setHoverTime(null);
+  }, [src, autoPlay]);
+
   // Handle Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -124,6 +171,10 @@ export function CustomMediaPlayer({
           e.preventDefault();
           toggleMute();
           break;
+        case "KeyP":
+          e.preventDefault();
+          togglePiP();
+          break;
         default:
           break;
       }
@@ -133,17 +184,25 @@ export function CustomMediaPlayer({
     return () => {
       window.removeEventListener("keydown", handleKeyDown);
     };
-  }, [togglePlay, skipTime, adjustVolume, toggleFullscreen, toggleMute]);
+  }, [togglePlay, skipTime, adjustVolume, toggleFullscreen, toggleMute, togglePiP]);
 
-  // Fullscreen Change Event
+  // Fullscreen & PiP Change Event Listener
   useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(!!document.fullscreenElement);
-    };
+    const handleFullscreenChange = () => setIsFullscreen(!!document.fullscreenElement);
+    const handlePiPChange = () => setIsPiP(!!document.pictureInPictureElement);
 
     document.addEventListener("fullscreenchange", handleFullscreenChange);
+    if (videoRef.current) {
+      videoRef.current.addEventListener("enterpictureinpicture", handlePiPChange);
+      videoRef.current.addEventListener("leavepictureinpicture", handlePiPChange);
+    }
+    
     return () => {
       document.removeEventListener("fullscreenchange", handleFullscreenChange);
+      if (videoRef.current) {
+        videoRef.current.removeEventListener("enterpictureinpicture", handlePiPChange);
+        videoRef.current.removeEventListener("leavepictureinpicture", handlePiPChange);
+      }
     };
   }, []);
 
@@ -158,8 +217,10 @@ export function CustomMediaPlayer({
     }
   };
 
-  const handlePlay = () => setIsPlaying(true);
+  const handlePlay = () => { setIsPlaying(true); setIsWaiting(false); };
   const handlePause = () => setIsPlaying(false);
+  const handleWaiting = () => setIsWaiting(true);
+  const handlePlaying = () => setIsWaiting(false);
 
   // Update Progress
   const handleTimeUpdate = () => {
@@ -184,8 +245,17 @@ export function CustomMediaPlayer({
       setIsMuted(val === 0);
     }
   };
+  
+  const handleProgressHover = (e: React.MouseEvent<HTMLDivElement>) => {
+    if (!duration) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    const percent = Math.min(Math.max(0, e.clientX - rect.x), rect.width) / rect.width;
+    setHoverPercent(percent);
+    setHoverTime(percent * duration);
+  };
 
   const formatTime = (time: number) => {
+    if (isNaN(time)) return "0:00";
     const mins = Math.floor(time / 60);
     const secs = Math.floor(time % 60);
     return `${mins}:${secs < 10 ? "0" : ""}${secs}`;
@@ -196,7 +266,10 @@ export function CustomMediaPlayer({
       ref={containerRef}
       className="relative group w-full h-full overflow-hidden rounded-xl bg-black shadow-lg border border-border select-none"
       onMouseMove={handleMouseMove}
-      onMouseLeave={() => isPlaying && setShowControls(false)}
+      onMouseLeave={() => {
+        if (isPlaying) setShowControls(false);
+        setHoverTime(null);
+      }}
     >
       <video
         ref={videoRef}
@@ -206,6 +279,8 @@ export function CustomMediaPlayer({
         onClick={togglePlay}
         onPlay={handlePlay}
         onPause={handlePause}
+        onWaiting={handleWaiting}
+        onPlaying={handlePlaying}
         onTimeUpdate={handleTimeUpdate}
         onLoadedMetadata={() => setDuration(videoRef.current?.duration || 0)}
         className="w-full h-full cursor-pointer object-contain"
@@ -214,14 +289,14 @@ export function CustomMediaPlayer({
       <div
         onClick={togglePlay}
         className={`absolute inset-0 bg-linear-to-t from-black/80 via-transparent to-transparent flex flex-col justify-between p-4 transition-opacity duration-300 cursor-pointer ${
-          showControls || !isPlaying
+          showControls || !isPlaying || isWaiting
             ? "opacity-100"
             : "opacity-0 pointer-events-none"
         }`}
       >
         <div />
 
-        {!isPlaying && (
+        {!isPlaying && !isWaiting && (
           <button
             onClick={(e) => {
               e.stopPropagation();
@@ -232,27 +307,54 @@ export function CustomMediaPlayer({
             <Play className="h-8 w-8 fill-current ml-1" />
           </button>
         )}
+        
+        {isWaiting && (
+           <div className="self-center bg-black/50 p-4 rounded-full">
+             <Loader2 className="h-10 w-10 text-white animate-spin" />
+           </div>
+        )}
 
         <div
-          className="space-y-2 cursor-default"
+          className="space-y-3 cursor-default mt-auto"
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="flex items-center gap-2">
+          <div 
+            className="relative flex items-center group/progress h-2 cursor-pointer py-1"
+            onMouseMove={handleProgressHover}
+            onMouseLeave={() => setHoverTime(null)}
+          >
+            {/* Base track */}
+            <div className="absolute w-full h-1 bg-white/30 rounded-lg group-hover/progress:h-1.5 transition-all" />
+            {/* Buffered track (simulated for UI consistency, could use videoRef.current.buffered) */}
+            <div className="absolute h-1 bg-white/50 rounded-lg group-hover/progress:h-1.5 transition-all" style={{ width: `${duration > 0 ? Math.min(100, (currentTime / duration) * 100 + 5) : 0}%` }} />
+            {/* Progress track */}
+            <div className="absolute h-1 bg-primary rounded-lg group-hover/progress:h-1.5 transition-all z-10" style={{ width: `${duration > 0 ? (currentTime / duration) * 100 : 0}%` }} />
+            
             <input
               type="range"
               min={0}
               max={duration || 0}
               value={currentTime}
               onChange={handleSeek}
-              className="w-full h-1.5 bg-white/70 rounded-lg appearance-none cursor-pointer hover:h-2 transition-all accent-secondary"
+              className="absolute w-full h-full opacity-0 cursor-pointer z-20"
             />
+            
+            {/* Hover tooltip */}
+            {hoverTime !== null && (
+              <div 
+                className="absolute bottom-4 -translate-x-1/2 bg-black/80 px-2 py-1 rounded text-xs text-white font-mono pointer-events-none z-30"
+                style={{ left: `${hoverPercent * 100}%` }}
+              >
+                {formatTime(hoverTime)}
+              </div>
+            )}
           </div>
 
           <div className="flex items-center justify-between text-white text-sm">
             <div className="flex items-center gap-3">
               <button
                 onClick={togglePlay}
-                className="transition-colors cursor-pointer"
+                className="transition-colors hover:text-primary cursor-pointer"
                 title={isPlaying ? "Pause (Space)" : "Play (Space)"}
               >
                 {isPlaying ? (
@@ -264,7 +366,7 @@ export function CustomMediaPlayer({
 
               <button
                 onClick={() => skipTime(-10)}
-                className="transition-colors cursor-pointer"
+                className="transition-colors hover:text-primary cursor-pointer"
                 title="Mundur 10s (←)"
               >
                 <RotateCcw className="h-4 w-4" />
@@ -272,7 +374,7 @@ export function CustomMediaPlayer({
 
               <button
                 onClick={() => skipTime(10)}
-                className="transition-colors cursor-pointer"
+                className="transition-colors hover:text-primary cursor-pointer"
                 title="Maju 10s (→)"
               >
                 <RotateCw className="h-4 w-4" />
@@ -281,7 +383,7 @@ export function CustomMediaPlayer({
               <div className="flex items-center gap-2 group/vol">
                 <button
                   onClick={toggleMute}
-                  className="transition-colors cursor-pointer "
+                  className="transition-colors hover:text-primary cursor-pointer "
                   title="Mute (M)"
                 >
                   {isMuted || volume === 0 ? (
@@ -297,19 +399,44 @@ export function CustomMediaPlayer({
                   step={0.05}
                   value={isMuted ? 0 : volume}
                   onChange={handleVolumeChange}
-                  className="w-16 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer accent-secondary"
+                  className="w-0 opacity-0 group-hover/vol:w-16 group-hover/vol:opacity-100 h-1 bg-white/60 rounded-lg appearance-none cursor-pointer accent-primary transition-all duration-300"
                 />
               </div>
 
-              <span className="text-xs ml-2 font-mono text-white">
-                {formatTime(currentTime)} / {formatTime(duration)}
+              <span className="text-xs ml-2 font-mono text-white/90">
+                {formatTime(currentTime)} <span className="text-white/50">/</span> {formatTime(duration)}
               </span>
             </div>
 
             <div className="flex items-center gap-3">
+              <DropdownMenu>
+                <DropdownMenuTrigger className="transition-colors hover:text-primary cursor-pointer flex items-center gap-1 font-mono text-xs outline-none" title="Playback Speed">
+                  {playbackRate === 1 ? <Gauge className="h-4 w-4" /> : `${playbackRate}x`}
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="bg-black/90 border-white/10 text-white w-32">
+                  {[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map((rate) => (
+                    <DropdownMenuItem 
+                      key={rate} 
+                      onClick={() => changePlaybackRate(rate)}
+                      className={`cursor-pointer ${playbackRate === rate ? 'bg-white/20' : ''} hover:bg-white/30`}
+                    >
+                      {rate === 1 ? 'Normal' : `${rate}x`}
+                    </DropdownMenuItem>
+                  ))}
+                </DropdownMenuContent>
+              </DropdownMenu>
+
+              <button
+                onClick={togglePiP}
+                className="transition-colors hover:text-primary cursor-pointer hidden md:block"
+                title="Picture-in-Picture (P)"
+              >
+                {isPiP ? <PictureInPicture2 className="h-5 w-5" /> : <PictureInPicture className="h-5 w-5" />}
+              </button>
+
               <button
                 onClick={toggleFullscreen}
-                className="transition-colors cursor-pointer"
+                className="transition-colors hover:text-primary cursor-pointer"
                 title="Fullscreen (F)"
               >
                 {isFullscreen ? (

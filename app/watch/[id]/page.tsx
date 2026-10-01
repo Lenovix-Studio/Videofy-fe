@@ -1,411 +1,74 @@
-"use client";
-
-import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useEffect, useState, use } from "react";
-import {
-  Pencil,
-  Trash2,
-  Heart,
-  Download,
-  Calendar,
-  Clock,
-  HardDrive,
-  Globe,
-  Eye,
-  Loader2,
-} from "lucide-react";
-import {
-  formatFileSize,
-  formatDuration,
-  formatDate,
-  getMediaUrl,
-} from "@/lib/helper";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Header } from "@/components/header";
-import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import notFound from "@/app/not-found";
-import WatchLoading from "@/app/loading";
-import { toast } from "sonner";
-import { CustomMediaPlayer } from "@/components/CustomMediaPlayer";
 import { BACKEND_URL } from "@/lib/constant";
 import { RelatedVideo, VideoDetail } from "@/lib/types";
+import { WatchClientView } from "./WatchClientView";
 
 interface PageProps {
   params: Promise<{
     id: string;
   }>;
+  searchParams: Promise<{
+    list?: string;
+  }>;
 }
 
-export default function WatchPage({ params }: PageProps) {
-  const resolvedParams = use(params);
+export default async function WatchPage({ params, searchParams }: PageProps) {
+  const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const videoId = resolvedParams.id;
-  const router = useRouter();
+  const listId = resolvedSearchParams.list;
 
-  const [currentVideo, setCurrentVideo] = useState<VideoDetail | null>(null);
-  const [relatedVideos, setRelatedVideos] = useState<RelatedVideo[]>([]);
-  const [loading, setLoading] = useState<boolean>(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isFavorite, setIsFavorite] = useState<boolean>(false);
-  const [isDeleting, setIsDeleting] = useState<boolean>(false);
+  let currentVideo: VideoDetail | null = null;
+  let relatedVideos: RelatedVideo[] = [];
+  let userPlaylists: any[] = [];
+  let playlistQueue: any = null;
 
-  // Fetch detail video
-  useEffect(() => {
-    const fetchAllVideoData = async () => {
-      try {
-        setLoading(true);
+  try {
+    const fetchPromises: Promise<any>[] = [
+      fetch(`${BACKEND_URL}/videos/${videoId}`, { cache: "no-store" }),
+      fetch(`${BACKEND_URL}/videos/${videoId}/related`, { cache: "no-store" }),
+      fetch(`${BACKEND_URL}/playlists`, { cache: "no-store" }),
+    ];
 
-        const [detailRes, relatedRes] = await Promise.all([
-          fetch(`${BACKEND_URL}/videos/${videoId}`),
-          fetch(`${BACKEND_URL}/videos/${videoId}/related`, {
-            cache: "no-store",
-          }),
-        ]);
-
-        if (!detailRes.ok) {
-          throw new Error("Gagal mengambil data video");
-        }
-
-        const detailData: VideoDetail = await detailRes.json();
-        setCurrentVideo(detailData);
-        setIsFavorite(detailData.isFavorite);
-
-        if (relatedRes.ok) {
-          const relatedData: RelatedVideo[] = await relatedRes.json();
-          setRelatedVideos(relatedData);
-        } else {
-          console.error("Gagal mengambil data video terkait");
-        }
-      } catch (err: any) {
-        setError(err.message || "Terjadi kesalahan");
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    if (videoId) {
-      fetchAllVideoData();
+    if (listId) {
+      fetchPromises.push(fetch(`${BACKEND_URL}/playlists/${listId}`, { cache: "no-store" }));
     }
-  }, [videoId]);
 
-  // Handler Hapus Video
-  const handleDeleteVideo = async () => {
-    try {
-      setIsDeleting(true);
-      const res = await fetch(`${BACKEND_URL}/videos/${videoId}`, {
-        method: "DELETE",
-      });
+    const [detailRes, relatedRes, playlistsRes, queueRes] = await Promise.all(fetchPromises);
 
-      if (!res.ok) {
-        throw new Error("Gagal menghapus video");
-      }
-
-      router.push("/");
-      router.refresh();
-    } catch (err: any) {
-      alert(err.message || "Terjadi kesalahan saat menghapus video");
-    } finally {
-      setIsDeleting(false);
+    if (!detailRes.ok) {
+      return notFound();
     }
-  };
 
-  // Handler Download Video
-  const handleDownload = () => {
-    if (!currentVideo) return;
-
-    window.location.href = `${BACKEND_URL}/videos/${currentVideo.id}/download`;
-  };
-
-  // Handler Favorite
-  const handleToggleFavorite = async () => {
-    if (!currentVideo) return;
-
-    setIsFavorite((prev) => !prev);
-
-    try {
-      const response = await fetch(
-        `${BACKEND_URL}/favorites/${currentVideo.id}/favorite`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-        },
-      );
-
-      if (!response.ok) {
-        throw new Error("Gagal memproses favorit");
-      }
-
-      const data = await response.json();
-
-      setIsFavorite(data.isFavorite);
-    } catch (error: any) {
-      toast.error(error.message || "Gagal mengubah status favorit");
-      setIsFavorite((prev) => !prev);
+    currentVideo = await detailRes.json();
+    
+    if (relatedRes.ok) {
+      relatedVideos = await relatedRes.json();
     }
-  };
 
-  if (loading) {
-    return WatchLoading();
+    if (playlistsRes.ok) {
+      userPlaylists = await playlistsRes.json();
+    }
+
+    if (queueRes && queueRes.ok) {
+      playlistQueue = await queueRes.json();
+    }
+  } catch (err) {
+    return notFound();
   }
 
-  if (error || (!currentVideo && currentVideo == null)) {
+  if (!currentVideo) {
     return notFound();
   }
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      <Header />
-
-      {/* Main Content Layout */}
-      <main className="mx-auto px-4 pt-20 pb-12 lg:px-8">
-        <div className="grid grid-cols-1 gap-8 lg:grid-cols-3 xl:grid-cols-4">
-          {/* Main Video Section (Left Column) */}
-          <div className="lg:col-span-2 xl:col-span-3">
-            {/* Custom Media Player */}
-            <div className="relative aspect-video overflow-hidden rounded-2xl bg-black shadow-lg">
-              <CustomMediaPlayer
-                src={getMediaUrl(currentVideo.videoUrl)}
-                poster={getMediaUrl(currentVideo.thumbnailUrl)}
-              />
-            </div>
-
-            {/* Video Title */}
-            <h1 className="mt-4 text-xl font-bold tracking-tight sm:text-2xl">
-              {currentVideo.title}
-            </h1>
-
-            {/* Technical Metadata Row */}
-            <div className="mt-2 flex flex-wrap items-center gap-y-2 gap-x-4 text-xs font-medium text-muted-foreground">
-              <div className="flex items-center gap-1">
-                <Eye className="h-3.5 w-3.5" />
-                <span>{currentVideo.views} views</span>
-              </div>
-              <Separator orientation="vertical" className="h-3" />
-              <div className="flex items-center gap-1">
-                <Calendar className="h-3.5 w-3.5" />
-                <span>{formatDate(currentVideo.createdAt)}</span>
-              </div>
-              <Separator
-                orientation="vertical"
-                className="h-3 hidden sm:block"
-              />
-              <div className="flex items-center gap-1">
-                <Clock className="h-3.5 w-3.5" />
-                <span>{formatDuration(currentVideo.duration)}</span>
-              </div>
-              <Separator orientation="vertical" className="h-3" />
-              <div className="flex items-center gap-1">
-                <HardDrive className="h-3.5 w-3.5" />
-                <span>{formatFileSize(currentVideo.size)}</span>
-              </div>
-              {currentVideo.source && (
-                <>
-                  <Separator orientation="vertical" className="h-3" />
-                  <div className="flex items-center gap-1">
-                    <Globe className="h-3.5 w-3.5" />
-                    <span>{currentVideo.source}</span>
-                  </div>
-                </>
-              )}
-            </div>
-
-            {/* Channel Info & Actions Bar */}
-            <div className="mt-4 flex flex-wrap items-center justify-between gap-4 border-t border-b py-4 dark:border-muted/40">
-              {/* Uploader Profile */}
-              <div className="flex items-center gap-3">
-                <Avatar className="h-10 w-10">
-                  <AvatarImage src="" />
-                  <AvatarFallback className="bg-primary/20 font-semibold text-primary">
-                    {currentVideo.uploader?.substring(0, 2).toUpperCase() ||
-                      "AD"}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <h3 className="text-sm font-semibold leading-none">
-                    {currentVideo.uploader}
-                  </h3>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex flex-wrap items-center gap-2">
-                {/* Favorite Video Button */}
-                <Button
-                  variant={isFavorite ? "default" : "outline"}
-                  size="sm"
-                  className="rounded-full gap-2"
-                  onClick={handleToggleFavorite}
-                >
-                  <Heart
-                    className={`h-4 w-4 ${
-                      isFavorite
-                        ? "text-red-500 fill-red-500"
-                        : "text-red-500 fill-none"
-                    }`}
-                  />
-                  <span>{isFavorite ? "Favorited" : "Favorite"}</span>
-                </Button>
-
-                {/* Download Video Button */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="rounded-full gap-2"
-                  onClick={handleDownload}
-                >
-                  <Download className="h-4 w-4" />
-                  <span>Download</span>
-                </Button>
-
-                {/* Edit Video Button */}
-                <Button variant="outline" size="sm" className="rounded-full">
-                  <Link
-                    href={`/edit/${currentVideo.id}`}
-                    className="flex items-center gap-2"
-                  >
-                    <Pencil className="h-4 w-4" />
-                    <span>Edit</span>
-                  </Link>
-                </Button>
-
-                {/* Delete Video Button */}
-                <AlertDialog>
-                  <AlertDialogTrigger
-                    render={
-                      <Button
-                        variant="destructive"
-                        size="sm"
-                        className="rounded-full gap-2"
-                        disabled={isDeleting}
-                      >
-                        {isDeleting ? (
-                          <Loader2 className="h-4 w-4 animate-spin" />
-                        ) : (
-                          <Trash2 className="h-4 w-4" />
-                        )}
-                        <span>{isDeleting ? "Deleting..." : "Delete"}</span>
-                      </Button>
-                    }
-                  />
-
-                  <AlertDialogContent>
-                    <AlertDialogHeader>
-                      <AlertDialogTitle>Hapus Video Ini?</AlertDialogTitle>
-                      <AlertDialogDescription>
-                        Tindakan ini tidak dapat dibatalkan. Video{" "}
-                        <strong>"{currentVideo.title}"</strong> dan semua file
-                        terkait akan dihapus secara permanen dari server.
-                      </AlertDialogDescription>
-                    </AlertDialogHeader>
-                    <AlertDialogFooter>
-                      <AlertDialogCancel>Batal</AlertDialogCancel>
-                      <AlertDialogAction
-                        onClick={handleDeleteVideo}
-                        className="bg-destructive hover:bg-destructive/90 text-destructive-foreground"
-                      >
-                        Hapus
-                      </AlertDialogAction>
-                    </AlertDialogFooter>
-                  </AlertDialogContent>
-                </AlertDialog>
-              </div>
-            </div>
-
-            {/* Video Description Box */}
-            <Card className="mt-4 rounded-xl bg-muted/40 hover:bg-muted/50 dark:bg-muted/20 dark:hover:bg-muted/30 transition-all duration-200 border-none shadow-none overflow-hidden">
-              <CardContent className="p-4 space-y-3.5">
-                {/* Tags Row */}
-                <div className="flex flex-wrap gap-2">
-                  {currentVideo.tags && currentVideo.tags.length > 0 ? (
-                    currentVideo.tags.map((tag) => (
-                      <Badge
-                        key={tag.id}
-                        variant="secondary"
-                        className="bg-background/60 hover:bg-background dark:bg-background/30 dark:hover:bg-background/50 border border-border/40 text-primary font-medium tracking-wide text-[11px] px-2.5 py-0.5 rounded-md transition-colors cursor-pointer shadow-sm"
-                      >
-                        #{tag.name}
-                      </Badge>
-                    ))
-                  ) : (
-                    <span className="text-xs text-muted-foreground italic">
-                      Tidak ada tag
-                    </span>
-                  )}
-                </div>
-
-                {/* Description Paragraph */}
-                <div className="pt-0.5">
-                  <p className="whitespace-pre-line text-[13.5px] leading-relaxed text-muted-foreground dark:text-foreground/80 font-normal tracking-wide">
-                    {currentVideo.description || "Tidak ada deskripsi video."}
-                  </p>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Related Videos Sidebar (Right Column) */}
-          <div className="space-y-4">
-            <h2 className="text-lg font-semibold tracking-tight">
-              Related Videos
-            </h2>
-            <Separator className="my-2" />
-
-            <div className="flex flex-col gap-4">
-              {relatedVideos.length === 0 && !loading ? (
-                <p className="text-xs text-muted-foreground text-center py-4">
-                  Tidak ada video terkait.
-                </p>
-              ) : (
-                relatedVideos.map((video) => (
-                  <Link
-                    key={video.id}
-                    href={`/watch/${video.id}`}
-                    className="group flex gap-3 rounded-xl p-1.5 transition hover:bg-muted/50"
-                  >
-                    {/* Thumbnail */}
-                    <div className="relative aspect-video w-40 shrink-0 overflow-hidden rounded-lg bg-muted">
-                      <img
-                        src={getMediaUrl(video.thumbnail)}
-                        alt={video.title}
-                        className="h-full w-full object-cover"
-                      />
-                      <span className="absolute bottom-1 right-1 rounded bg-black/80 px-1 py-0.5 text-[10px] font-medium text-white">
-                        {video.duration}
-                      </span>
-                    </div>
-
-                    {/* Info */}
-                    <div className="min-w-0 flex-1">
-                      <h3 className="line-clamp-2 text-xs font-semibold leading-snug transition group-hover:text-primary">
-                        {video.title}
-                      </h3>
-                      <p className="mt-1 text-[11px] text-muted-foreground">
-                        {video.date}
-                      </p>
-                    </div>
-                  </Link>
-                ))
-              )}
-            </div>
-          </div>
-        </div>
-      </main>
-    </div>
+    <WatchClientView 
+      videoId={videoId} 
+      listId={listId} 
+      initialVideo={currentVideo} 
+      initialRelatedVideos={relatedVideos}
+      userPlaylists={userPlaylists}
+      playlistQueue={playlistQueue}
+    />
   );
 }
